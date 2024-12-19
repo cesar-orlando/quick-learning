@@ -19,14 +19,14 @@ import CustomerDetails from "layouts/customers/CustomerDetails";
 import CustomerChat from "layouts/customers/customerChat";
 
 const routes = [
-/*   {
+  {
     type: "collapse",
     name: "Dashboard",
     key: "dashboard",
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",
     component: <Dashboard />,
-  }, */
+  },
 /*   {
     type: "collapse",
     name: "Tables",
@@ -40,7 +40,7 @@ const routes = [
     name: "Clientes",
     key: "customer",
     icon: <Icon fontSize="small">agent</Icon>,
-    route: "/dashboard",
+    route: "/customer",
     component: <Customer />,
   },
   {
