@@ -39,7 +39,7 @@ const routes = [
     type: "collapse",
     name: "Clientes",
     key: "customer",
-    icon: <Icon fontSize="small">agent</Icon>,
+    icon: <Icon fontSize="small">support_agent</Icon>,
     route: "/customer",
     component: <Customer />,
   },
