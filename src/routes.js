@@ -14,16 +14,19 @@ import Companies from "layouts/companies";
 import Promoter from "layouts/promotor";
 import PromoterDetails from "layouts/promotor/PromoterDetails";
 import CompanyDetails from "layouts/companies/companyDetails";
+import Customer from "layouts/customers";
+import CustomerDetails from "layouts/customers/CustomerDetails";
+import CustomerChat from "layouts/customers/customerChat";
 
 const routes = [
-  {
+/*   {
     type: "collapse",
     name: "Dashboard",
     key: "dashboard",
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",
     component: <Dashboard />,
-  },
+  }, */
 /*   {
     type: "collapse",
     name: "Tables",
@@ -34,11 +37,11 @@ const routes = [
   }, */
   {
     type: "collapse",
-    name: "Empresas",
-    key: "companies",
-    icon: <Icon fontSize="small">public</Icon>,
-    route: "/companies",
-    component: <Companies />,
+    name: "Clientes",
+    key: "customer",
+    icon: <Icon fontSize="small">agent</Icon>,
+    route: "/dashboard",
+    component: <Customer />,
   },
   {
     type: "collapse",
@@ -56,6 +59,16 @@ const routes = [
   {
     route: "/company/:id",
     component: <CompanyDetails />,
+
+  },
+  {
+    route: "/customer/:id",
+    component: <CustomerDetails />,
+
+  },
+  {
+    route: "/customer/chat/:id",
+    component: <CustomerChat />,
 
   },
 /*   {
