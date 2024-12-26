@@ -88,33 +88,7 @@ function Customer() {
                 </MDBox>
               ),
               phone: item.phone,
-              social: (
-                <MDBox display="flex" alignItems="left">
-                  <MDBox
-                    lineGeight={1}
-                    fontSize={16}
-                    sx={{
-                      maxWidth: "300px", // Fija el ancho máximo del contenedor
-                      whiteSpace: "normal", // Permite saltos de línea
-                      wordWrap: "break-word", // Ajusta palabras largas
-                      overflowWrap: "break-word", // Compatibilidad adicional
-                    }}
-                  >
-                    <MDTypography
-                      display="block"
-                      variant="button"
-                      sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
-                        wordWrap: "break-word", // Ajusta palabras largas
-                        overflowWrap: "break-word", // Compatibilidad adicional
-                      }}
-                    >
-                      {item.social}
-                    </MDTypography>
-                  </MDBox>
-                </MDBox>
-              ),
-              followup: (
+              comments: (
                 <MDBox display="flex" alignItems="left">
                   <MDBox
                     lineGeight={1}
@@ -136,7 +110,7 @@ function Customer() {
                         overflowWrap: "break-word", // Compatibilidad adicional
                       }}
                     >
-                      {item.followup}
+                      {item.comments}
                     </MDTypography>
                   </MDBox>
                 </MDBox>
@@ -179,8 +153,7 @@ function Customer() {
   const columns = [
     { Header: "Cliente", accessor: "name", width: "15%", align: "left" },
     { Header: "Número", accessor: "phone", align: "left" },
-      { Header: "Red Social", accessor: "social", align: "left", },
-    /*  { Header: "Seguimiento", accessor: "followup", align: "center" }, */
+     { Header: "Comentarios", accessor: "comments", align: "center" },
     { Header: "Status", accessor: "status", align: "center" },
     { Header: "Asesor", accessor: "employee", align: "center" },
     { Header: "Acciones", accessor: "action", align: "center" },

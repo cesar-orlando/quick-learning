@@ -125,7 +125,7 @@ export default function App() {
           <Sidenav
             color={sidenavColor}
             brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
-            brandName="Monex"
+            brandName="Quick Learning"
             routes={routes}
             onMouseEnter={handleOnMouseEnter}
             onMouseLeave={handleOnMouseLeave}

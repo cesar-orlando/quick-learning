@@ -6,7 +6,7 @@ import MDInput from "components/MDInput";
 import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import React, { useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 function CustomerDetails() {
@@ -15,10 +15,24 @@ function CustomerDetails() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [social, setSocial] = useState("");
-  const [whatsAppNumber, setWhatsAppNumber] = useState("");
-  const [whatsAppProfile, setWhatsAppProfile] = useState("");
+  const [classification, setClassification] = useState("");
   const [status, setStatus] = useState("");
-  const [followUp, setFollowUp] = useState("");
+  const [comments, setComments] = useState("");
+
+  /* Parametros para visitas si aplica */
+  const [branch, setBranch] = useState("");
+  const [visitDate, setVisitDate] = useState("");
+  const [visitTime, setVisitTime] = useState("");
+
+  /* Parametros para inscrito si aplica */
+  const [consecutive, setConsecutive] = useState("");
+  const [course, setCourse] = useState("");
+  const [modality, setModality] = useState("");
+  const [state, setState] = useState("");
+  const [emailInscribed, setEmailInscribed] = useState("");
+  const [marketing, setMarketing] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+
   const [promoter, setPromoter] = useState("");
   const [allPromoters, setAllPromoters] = useState([]);
 
@@ -35,15 +49,21 @@ function CustomerDetails() {
     await axios
       .get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/details/${id}`)
       .then((response) => {
-        console.log("response", response);
         setName(response.data.customer.name);
         setPhone(response.data.customer.phone);
-        setEmail(response.data.customer.email);
-        setSocial(response.data.customer.social);
-        setStatus(response.data.data.status);
-        setWhatsAppNumber(response.data.customer.whatsAppNumber);
-        setWhatsAppProfile(response.data.customer.whatsAppProfile);
-        setFollowUp(response.data.customer.followup);
+        setComments(response.data.customer.comments);
+        setClassification(response.data.customer.classification);
+        setStatus(response.data.customer.status);
+        setBranch(response.data.customer.visitDetails.branch);
+        setVisitDate(response.data.customer.visitDetails.visitDate);
+        setVisitTime(response.data.customer.visitDetails.visitTime);
+        setConsecutive(response.data.customer.enrollmentDetails.consecutive);
+        setCourse(response.data.customer.enrollmentDetails.course);
+        setModality(response.data.customer.enrollmentDetails.modality);
+        setState(response.data.customer.enrollmentDetails.state);
+        setEmailInscribed(response.data.customer.enrollmentDetails.email);
+        setMarketing(response.data.customer.enrollmentDetails.marketing);
+        setPaymentMethod(response.data.customer.enrollmentDetails.paymentMethod);
       })
       .catch((error) => {
         console.error(error);
@@ -67,11 +87,25 @@ function CustomerDetails() {
     let data = JSON.stringify({
       name: name,
       phone: phone,
-      email: email,
-      social: social,
-      followup: followUp,
+      comments: comments,
+      classification: classification,
       status: status,
-      //"employeeId": promoter._id
+      visitDetails: {
+        branch: branch,
+        date: visitDate,
+        time: visitTime,
+      },
+      enrollmentDetails: {
+        consecutive: consecutive,
+        course: course,
+        modality: modality,
+        state: state,
+        email: emailInscribed,
+        source: marketing,
+        paymentType: paymentMethod,
+      },
+      user: "676d66af22932ac7c09d787f",
+      ia: true,
     });
     console.log("data", data);
     let config = {
@@ -100,13 +134,13 @@ function CustomerDetails() {
     //handleGetPromoters();
   }, []);
 
-  // Promoter
-  const handleClickPromoter = (event) => {
+  // Classification
+  const handleClickClassification = (event) => {
     setAnchorElPromoter(event.currentTarget);
     setOpenPromoter(true);
   };
-  const handleClosePromoter = (option) => {
-    if (option) setPromoter(option);
+  const handleCloseClassification = (option) => {
+    if (option) setClassification(option);
     setAnchorElPromoter(null);
     setOpenPromoter(false);
   };
@@ -134,7 +168,23 @@ function CustomerDetails() {
     setOpenStatus(false);
   };
 
-  const options = ["ACEPTADO", "PENDIENTE", "ELIMINADO", "ASIGNADO"];
+  const options = [
+    "Prospecto",
+    "No contesta",
+    "No interesado por precio",
+    "Número equivocado",
+    "Error al seleccionar",
+    "Alumno",
+    "Ofrece servicios",
+    "Otros",
+  ];
+  const statusOptions = [
+    "Visita agendada",
+    "Segunda llamada",
+    "Inscrito con adelanto",
+    "Inscrito PL completo",
+    "Inscrito con promoción",
+  ];
   const ITEM_HEIGHT = 48;
 
   return (
@@ -181,53 +231,34 @@ function CustomerDetails() {
             <MDBox mb={2}>
               <TextField
                 id="outlined-basic"
-                label="Email"
+                label="Comentarios"
                 variant="outlined"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                fullWidth
-              />
-            </MDBox>
-            <MDBox mb={2}>
-              <TextField
-                id="outlined-basic"
-                label="Ubicación"
-                variant="outlined"
-                value={social}
-                onChange={(e) => setSocial(e.target.value)}
-                fullWidth
-              />
-            </MDBox>
-            <MDBox mb={2}>
-              <TextField
-                id="outlined-basic"
-                label="Seguimiento"
-                variant="outlined"
-                value={followUp}
-                onChange={(e) => setFollowUp(e.target.value)}
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
                 fullWidth
               />
             </MDBox>
             <MDBox mb={2} display="flex" flexDirection="row" gap={2}>
-              {/* Campo Promotor */}
-              {/*               <TextField
-                id="outlined-basic-2"
+              {/* Campo classification */}
+              <TextField
+                id="outlined-basic"
+                label="Clasificación"
                 variant="outlined"
-                value={promoter.name}
-                aria-controls={openPromoter ? "fade-menu-promoter" : undefined}
+                value={classification}
+                aria-controls={openPromoter ? "fade-menu-status" : undefined}
                 aria-haspopup="true"
                 aria-expanded={openPromoter ? "true" : undefined}
-                onClick={handleClickPromoter}
+                onClick={handleClickClassification}
                 fullWidth
               />
               <Menu
-                id="fade-menu-promoter"
+                id="fade-menu-status"
                 MenuListProps={{
-                  "aria-labelledby": "fade-button-promoter",
+                  "aria-labelledby": "fade-button-status",
                 }}
                 anchorEl={anchorElPromoter}
                 open={openPromoter}
-                onClose={handleClosePromoter}
+                onClose={handleCloseClassification}
                 slotProps={{
                   paper: {
                     style: {
@@ -237,23 +268,22 @@ function CustomerDetails() {
                   },
                 }}
               >
-                {allPromoters.map((option) => (
+                {options.map((option) => (
                   <MenuItem
-                    key={option.name}
-                    selected={option === promoter.name}
-                    onClick={() => handleClosePromoter(option)}
+                    key={option}
+                    selected={option === classification}
+                    onClick={() => handleCloseClassification(option)}
                   >
-                    {option.name}
+                    {option}
                   </MenuItem>
                 ))}
-              </Menu> */}
-
+              </Menu>
               {/* Campo Status */}
               <TextField
                 id="outlined-basic"
                 label="Status"
                 variant="outlined"
-                value={status ? options[status - 1] : ""}
+                value={status}
                 aria-controls={openStatus ? "fade-menu-status" : undefined}
                 aria-haspopup="true"
                 aria-expanded={openStatus ? "true" : undefined}
@@ -277,7 +307,7 @@ function CustomerDetails() {
                   },
                 }}
               >
-                {options.map((option) => (
+                {statusOptions.map((option) => (
                   <MenuItem
                     key={option}
                     selected={option === status}
@@ -288,6 +318,100 @@ function CustomerDetails() {
                 ))}
               </Menu>
             </MDBox>
+            {status === "Visita agendada" && (
+              <MDBox mb={2} display="flex" flexDirection="row" gap={2}>
+                <TextField
+                  id="outlined-basic"
+                  label="Sucursal"
+                  variant="outlined"
+                  fullWidth
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                />
+                <TextField
+                  id="outlined-basic"
+                  variant="outlined"
+                  fullWidth
+                  type="date"
+                  value={visitDate}
+                  onChange={(e) => setVisitDate(e.target.value)}
+                />
+                <TextField
+                  id="outlined-basic"
+                  label="Hora"
+                  variant="outlined"
+                  fullWidth
+                  value={visitTime}
+                  onChange={(e) => setVisitTime(e.target.value)}
+                />
+              </MDBox>
+            )}
+
+            {status ===
+              ("Inscrito con adelanto" || "Inscrito PL completo" || "Inscrito con promoción") && (
+              <Fragment>
+                <MDBox mb={2} display="flex" flexDirection="row" gap={2}>
+                  <TextField
+                    id="outlined-basic"
+                    label="Consecutivo"
+                    variant="outlined"
+                    fullWidth
+                    value={consecutive}
+                    onChange={(e) => setConsecutive(e.target.value)}
+                  />
+                  <TextField
+                    id="outlined-basic"
+                    label="Curso"
+                    variant="outlined"
+                    fullWidth
+                    value={course}
+                    onChange={(e) => setCourse(e.target.value)}
+                  />
+                  <TextField
+                    id="outlined-basic"
+                    label="Modalidad"
+                    variant="outlined"
+                    fullWidth
+                    value={modality}
+                    onChange={(e) => setModality(e.target.value)}
+                  />
+                  <TextField
+                    id="outlined-basic"
+                    label="Estado"
+                    variant="outlined"
+                    fullWidth
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                  />
+                </MDBox>
+                <MDBox mb={2} display="flex" flexDirection="row" gap={2}>
+                  <TextField
+                    id="outlined-basic"
+                    label="Email"
+                    variant="outlined"
+                    fullWidth
+                    value={emailInscribed}
+                    onChange={(e) => setEmailInscribed(e.target.value)}
+                  />
+                  <TextField
+                    id="outlined-basic"
+                    label="Marketing"
+                    variant="outlined"
+                    fullWidth
+                    value={marketing}
+                    onChange={(e) => setMarketing(e.target.value)}
+                  />
+                  <TextField
+                    id="outlined-basic"
+                    label="Metodo de pago"
+                    variant="outlined"
+                    fullWidth
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                </MDBox>
+              </Fragment>
+            )}
 
             <MDBox display="flex" alignItems="center" ml={-1}>
               <MDTypography
