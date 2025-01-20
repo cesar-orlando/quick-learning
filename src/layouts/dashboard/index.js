@@ -34,6 +34,7 @@ import reportsLineChartData from "layouts/dashboard/data/reportsLineChartData";
 import Projects from "layouts/dashboard/components/Projects";
 import OrdersOverview from "layouts/dashboard/components/OrdersOverview";
 import withJWT from "../../middleware/withJWT";
+import MexicoMap from "./components/mexicoMap";
 
 function Dashboard() {
   const { sales, tasks } = reportsLineChartData;
@@ -42,13 +43,18 @@ function Dashboard() {
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox py={3}>
+      <Grid item xs={12} md={6} lg={12}>
+            <MDBox mb={1.5}>
+              <MexicoMap />
+            </MDBox>
+          </Grid>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6} lg={3}>
             <MDBox mb={1.5}>
               <ComplexStatisticsCard
                 color="dark"
-                icon="weekend"
-                title="Bookings"
+                icon="query_stats"
+                title="Ventas"
                 count={281}
                 percentage={{
                   color: "success",
@@ -58,11 +64,13 @@ function Dashboard() {
               />
             </MDBox>
           </Grid>
+ 
+
           <Grid item xs={12} md={6} lg={3}>
             <MDBox mb={1.5}>
               <ComplexStatisticsCard
                 icon="leaderboard"
-                title="Today's Users"
+                title="Usuarios"
                 count="2,300"
                 percentage={{
                   color: "success",
@@ -76,8 +84,8 @@ function Dashboard() {
             <MDBox mb={1.5}>
               <ComplexStatisticsCard
                 color="success"
-                icon="store"
-                title="Revenue"
+                icon="local_library"
+                title="Renovaciones"
                 count="34k"
                 percentage={{
                   color: "success",
