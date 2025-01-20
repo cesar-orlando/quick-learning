@@ -17,6 +17,9 @@ import CompanyDetails from "layouts/companies/companyDetails";
 import Customer from "layouts/customers";
 import CustomerDetails from "layouts/customers/CustomerDetails";
 import CustomerChat from "layouts/customers/customerChat";
+import Promotions from "layouts/promotions";
+import AddPromotion from "layouts/promotions/addPromotion";
+import ChatApp from "layouts/chatApp/chatApp";
 
 const routes = [
   {
@@ -52,6 +55,26 @@ const routes = [
     component: <Promoter />,
   },
   {
+    type: "collapse",
+    name: "Promociones",
+    key: "promotions",
+    icon: <Icon fontSize="small">local_offer</Icon>,
+    route: "/promotions",
+    component: <Promotions />,
+  },
+  {
+    type: "collapse",
+    name: "Quick Chat",
+    key: "chat",
+    icon: <Icon fontSize="small">chat</Icon>,
+    route: "/chat",
+    component: <ChatApp />,
+  },
+  {
+    route:"/add-promotion",
+    component: <AddPromotion />
+  },
+  {
     route: "/promoter/:id",
     component: <PromoterDetails />,
 
@@ -71,6 +94,7 @@ const routes = [
     component: <CustomerChat />,
 
   },
+
 /*   {
     type: "collapse",
     name: "Billing",
@@ -95,14 +119,11 @@ const routes = [
     route: "/profile",
     component: <Profile />,
   },
+  */
   {
-    type: "collapse",
-    name: "Sign In",
-    key: "sign-in",
-    icon: <Icon fontSize="small">login</Icon>,
     route: "/authentication/sign-in",
     component: <SignIn />, 
-  },  */
+  },  
 
 ];
 

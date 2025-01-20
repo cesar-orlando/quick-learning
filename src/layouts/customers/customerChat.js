@@ -42,7 +42,7 @@ function CustomerChat() {
     console.log("customer", customer.phone);
     await axios
       .post("https://www.jetdan9878.online/api/v2/whastapp/logs-messages", {
-        to: `whatsapp:+${customer.phone}`,
+        to: `whatsapp:+5213311120999`,
       })
       .then((response) => {
         console.log(response.data.findMessages);

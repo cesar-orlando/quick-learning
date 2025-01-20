@@ -125,9 +125,6 @@ function Customer() {
                       <Menu {...bindMenu(popupState)}>
                         <MenuItem onClick={() => editCustomer(item, popupState)}>Editar </MenuItem>
                         <MenuItem onClick={() => viewChat(item, popupState)}>Ver Chat </MenuItem>
-                        <MenuItem onClick={() => deleteCompany(item, popupState)}>
-                          Eliminar
-                        </MenuItem>
                       </Menu>
                     </Fragment>
                   )}
@@ -272,7 +269,7 @@ function Customer() {
                   coloredShadow="info"
                 >
                   <MDTypography variant="h6" color="white">
-                    Empresas
+                    Clientes
                   </MDTypography>
                 </MDBox>
                 <MDBox pt={3}>

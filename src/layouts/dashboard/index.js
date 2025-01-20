@@ -33,6 +33,7 @@ import reportsLineChartData from "layouts/dashboard/data/reportsLineChartData";
 // Dashboard components
 import Projects from "layouts/dashboard/components/Projects";
 import OrdersOverview from "layouts/dashboard/components/OrdersOverview";
+import withJWT from "../../middleware/withJWT";
 
 function Dashboard() {
   const { sales, tasks } = reportsLineChartData;
@@ -158,4 +159,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default withJWT(Dashboard);
