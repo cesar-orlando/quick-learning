@@ -32,6 +32,7 @@ import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "co
 // Images
 import brandWhite from "assets/images/logo-ct.png";
 import brandDark from "assets/images/logo-ct-dark.png";
+import routesUser from "routesUser";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -117,6 +118,10 @@ export default function App() {
     </MDBox>
   );
 
+  const permissions = sessionStorage.getItem("permissions");
+
+  const routesResult = permissions === "3" ? routesUser : routes;
+
   return (
     <ThemeProvider theme={darkMode ? themeDark : theme}>
       <CssBaseline />
@@ -126,7 +131,7 @@ export default function App() {
             color={sidenavColor}
             brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
             brandName="Quick Learning"
-            routes={routes}
+            routes={routesResult}
             onMouseEnter={handleOnMouseEnter}
             onMouseLeave={handleOnMouseLeave}
           />
@@ -136,7 +141,7 @@ export default function App() {
       )}
       {layout === "vr" && <Configurator />}
       <Routes>
-        {getRoutes(routes)}
+        {getRoutes(routesResult)}
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </ThemeProvider>

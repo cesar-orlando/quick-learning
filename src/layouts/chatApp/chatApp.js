@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   List,
@@ -21,11 +21,26 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import PropTypes from "prop-types";
+import axios from "axios";
 
 const ChatApp = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
   const [selectedType, setSelectedType] = useState(null); // Group or Personal
+
+  const handleGetUsers = () => {
+    // Lógica para obtener los usuarios
+    axios.get(`${process.env.REACT_APP_API_URL}/api/v1/user/`).then((response) => {
+      console.log("response", response.data.users);
+    }).catch((error) => {
+      console.error("error", error);
+    });
+  };
+
+  useEffect(() => {
+    handleGetUsers();
+  }, []);
+  
 
   // Estado para almacenar los mensajes de cada chat
 // Estado para almacenar los mensajes de cada chat

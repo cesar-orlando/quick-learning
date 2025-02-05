@@ -1,4 +1,3 @@
-
 // Material Dashboard 2 React layouts
 import Dashboard from "layouts/dashboard";
 import Tables from "layouts/tables";
@@ -22,9 +21,7 @@ import AddPromotion from "layouts/promotions/addPromotion";
 import ChatApp from "layouts/chatApp/chatApp";
 import AddCustomer from "layouts/customers/components/addCustomer";
 
-const permissions = sessionStorage.getItem("permissions");
-
-const routes = [
+const routesUser = [
   {
     type: "collapse",
     name: "Dashboard",
@@ -33,14 +30,6 @@ const routes = [
     route: "/dashboard",
     component: <Dashboard />,
   },
-/*   {
-    type: "collapse",
-    name: "Tables",
-    key: "tables",
-    icon: <Icon fontSize="small">table_view</Icon>,
-    route: "/tables",
-    component: <Tables />,
-  }, */
   {
     type: "collapse",
     name: "Clientes",
@@ -50,24 +39,8 @@ const routes = [
     component: <Customer />,
   },
   {
-    route:"/add-customer",
-    component: <AddCustomer />
-  },
-  {
-    type: "collapse",
-    name: "Promotores",
-    key: "promoter",
-    icon: <Icon fontSize="small">diversity_3</Icon>,
-    route: "/promoter",
-    component: <Promoter />,
-  },
-  {
-    type: "collapse",
-    name: "Promociones",
-    key: "promotions",
-    icon: <Icon fontSize="small">local_offer</Icon>,
-    route: "/promotions",
-    component: <Promotions />,
+    route: "/add-customer",
+    component: <AddCustomer />,
   },
   {
     type: "collapse",
@@ -78,30 +51,23 @@ const routes = [
     component: <ChatApp />,
   },
   {
-    route:"/add-promotion",
-    component: <AddPromotion />
-  },
-  {
     route: "/promoter/:id",
     component: <PromoterDetails />,
   },
   {
     route: "/company/:id",
     component: <CompanyDetails />,
-
   },
   {
     route: "/customer/:id",
     component: <CustomerDetails />,
-
   },
   {
     route: "/customer/chat/:id",
     component: <CustomerChat />,
-
   },
 
-/*   {
+  /*   {
     type: "collapse",
     name: "Billing",
     key: "billing",
@@ -128,9 +94,8 @@ const routes = [
   */
   {
     route: "/authentication/sign-in",
-    component: <SignIn />, 
-  },  
-
+    component: <SignIn />,
+  },
 ];
 
-export default routes;
+export default routesUser;

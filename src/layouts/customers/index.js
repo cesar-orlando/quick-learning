@@ -26,7 +26,7 @@ import TableRow from "@mui/material/TableRow";
 import CircularProgress from "@mui/material/CircularProgress";
 import UploadButton from "components/UploadButton/UploadButton";
 import MDInput from "components/MDInput";
-import { Autocomplete, Menu, MenuItem } from "@mui/material";
+import { Autocomplete, Menu, MenuItem, Typography } from "@mui/material";
 import Header from "layouts/profile/components/Header";
 import PopupState, { bindTrigger, bindMenu } from "material-ui-popup-state";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -34,6 +34,7 @@ import { useNavigate } from "react-router-dom";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
+import MDButton from "components/MDButton";
 
 // Data
 
@@ -42,13 +43,13 @@ function Customer() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const getCompanies = async () => {
+  const getCustomers = async () => {
     const apiUrl = process.env.REACT_APP_API_URL;
     try {
       axios
         .get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/list`)
         .then((res) => {
-            console.log("res", res.data.customers);
+          console.log("res", res.data.customers);
           const filterData = res.data.customers.map((item) => {
             return {
               name: (
@@ -144,13 +145,13 @@ function Customer() {
   };
 
   useEffect(() => {
-    getCompanies();
+    getCustomers();
   }, []);
 
   const columns = [
     { Header: "Cliente", accessor: "name", width: "15%", align: "left" },
     { Header: "Número", accessor: "phone", align: "left" },
-     { Header: "Comentarios", accessor: "comments", align: "center" },
+    { Header: "Comentarios", accessor: "comments", align: "center" },
     { Header: "Status", accessor: "status", align: "center" },
     { Header: "Asesor", accessor: "employee", align: "center" },
     { Header: "Acciones", accessor: "action", align: "center" },
@@ -164,32 +165,14 @@ function Customer() {
   const viewChat = async (item, popupState) => {
     popupState.close();
     navigate(`/customer/chat/${item._id}`);
-  }
-
-
-  const deleteCompany = async (item, popupState) => {
-    popupState.close();
-    await axios
-      .put(`${process.env.REACT_APP_API_URL}/api/v1/monex/companies/update/${item._id}`, {
-        company: item.company,
-        contact: item.contact,
-        phone: item.phone,
-        email: item.email,
-        address: item.address,
-        followup: item.followup,
-        status: "DELETED",
-        employeeId: item.employeeId,
-      })
-      .then((res) => {
-        getCompanies();
-      })
-      .catch((err) => {
-        console.error(err);
-      });
   };
 
   const downloadExcel = () => {
     return console.log("Descargando Excel");
+  };
+
+  const createCustomer = () => {
+    return console.log("Creando Cliente");
   };
 
   const renderSkeletonTable = () => {
@@ -268,14 +251,28 @@ function Customer() {
                   borderRadius="lg"
                   coloredShadow="info"
                 >
-                  <MDTypography variant="h6" color="white">
+                  <MDTypography variant="h4" color="white">
                     Clientes
                   </MDTypography>
                 </MDBox>
                 <MDBox pt={3}>
-                  <MDBox px={3}>
-                    <UploadButton functionToCall={downloadExcel} />
+                  <MDBox sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <MDButton
+                      color="info"
+                      style={{ marginLeft: "16px" }}
+                      coloredShadow="info"
+                      px={5}
+                      onClick={() => navigate("/add-customer")} // Redirect to create promotion page
+                    >
+                      <MDTypography variant="h6" color="white" onClick={createCustomer}>
+                        Crear Cliente
+                      </MDTypography>
+                    </MDButton>
+                    <MDBox px={3}>
+                      <UploadButton functionToCall={downloadExcel} />
+                    </MDBox>
                   </MDBox>
+
                   <DataTable
                     table={{ columns: columns, rows: companies }}
                     isSorted={true}

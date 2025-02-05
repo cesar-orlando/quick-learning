@@ -23,60 +23,98 @@ function CustomerChat() {
   const [customer, setCustomer] = useState("");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ia, setIa] = useState(true); // Estado para manejar el valor de `ia`
 
   const handleGetInfoCustomer = async () => {
     setLoading(true);
     await axios
       .get(`https://www.jetdan9878.online/api/v1/quicklearning/details/${id}`)
       .then((response) => {
-        console.log(response.data.customer);
         setCustomer(response.data.customer);
+        setIa(response.data.customer.ia); 
       })
       .catch((error) => {
-        console.log(error);
         setLoading(false);
       });
   };
 
   const handleGetChat = async () => {
-    console.log("customer", customer.phone);
     await axios
       .post("https://www.jetdan9878.online/api/v2/whastapp/logs-messages", {
-        to: `whatsapp:+5213311120999`,
+        to: `whatsapp:+${customer.phone}`,
       })
       .then((response) => {
-        console.log(response.data.findMessages);
         setMessages(response.data.findMessages.reverse());
         setLoading(false);
       })
       .catch((error) => {
-        console.log(error);
         setLoading(false);
+      });
+  };
+
+  const handleToggleIA = async () => {
+    const newIaValue = !ia;
+    let data = JSON.stringify({ ia: newIaValue });
+
+    let config = {
+      method: "put",
+      maxBodyLength: Infinity,
+      url: `${process.env.REACT_APP_API_URL}/api/v1/quicklearning/update/${id}`,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: data,
+    };
+
+    axios
+      .request(config)
+      .then((response) => {
+        setIa(newIaValue); // Actualizar el estado `ia`
+      })
+      .catch((error) => {
+        console.log(error);
       });
   };
 
   // Handle sending messages
   const sendMessage = () => {
-    if (input.trim() === "") return; // Prevent empty messages
-    setMessages([...messages, { text: input, direction: "outbound-api" }]);
-    setInput("");
-    // Simulate bot response
-    setTimeout(() => {
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { text: "This is a bot response.", sender: "bot" },
-      ]);
-    }, 1000);
+    axios.post(`${process.env.REACT_APP_API_URL}/api/v2/whastapp`, {
+      to: `whatsapp:+${customer.phone}`,
+      message: input,
+    }).then((response) => {
+      console.log(response);
+    }).catch((error) => {
+      console.log(error);
+    });
   };
 
   useEffect(() => {
     handleGetInfoCustomer();
-    handleGetChat();
   }, []);
+
+  useEffect(() => {
+    handleGetChat();
+  }, [customer]);
 
   return (
     <DashboardLayout>
       <DashboardNavbar />
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          width: "100%",
+          height: "100%",
+          padding: "16px",
+        }}
+      >
+        {/* Botón para activar/desactivar IA */}
+        <Box sx={{ marginRight: "16px" }}>
+          <Button variant="contained" color={ia ? "white" : "primary"} sx={{color:"primary"}}  onClick={handleToggleIA}>
+            {ia ? "Desactivar IA" : "Activar IA"}
+          </Button>
+        </Box>
       <Box
         sx={{
           display: "flex",
@@ -183,11 +221,12 @@ function CustomerChat() {
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Type a message..."
           />
-          <Button variant="contained" color="primary" onClick={sendMessage}>
+          <Button variant="contained" color="primary" onClick={sendMessage} disabled={!input} >
             Send
           </Button>
         </Box>
       </Box>
+      </Box>  
     </DashboardLayout>
   );
 }

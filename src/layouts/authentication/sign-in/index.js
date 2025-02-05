@@ -57,10 +57,11 @@ function Basic() {
       .post("https://www.jetdan9878.online/api/v1/user/login", {
         email,
         password,
-        company:"QuickLearning"
+        //company:"QuickLearning"
       })
       .then((response) => {
-        console.log(response.data);
+        console.log(response.data.user._id);
+        sessionStorage.setItem("user", response.data.user._id);
         sessionStorage.setItem("token", response?.data.token);
         sessionStorage.setItem("permissions", response.data.user.permissions);
         navigate("/dashboard", { replace: true });

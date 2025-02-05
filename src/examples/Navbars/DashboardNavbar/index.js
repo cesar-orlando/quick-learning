@@ -53,6 +53,16 @@ import {
   setOpenConfigurator,
 } from "context";
 
+// Función para limpiar el caché y redirigir
+const clearCacheAndRedirect = () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  caches.keys().then(names => {
+    for (let name of names) caches.delete(name);
+  });
+  window.location.href = "/authentication/sign-in/basic";
+};
+
 function DashboardNavbar({ absolute, light, isMini }) {
   const [navbarType, setNavbarType] = useState();
   const [controller, dispatch] = useMaterialUIController();
@@ -138,8 +148,8 @@ function DashboardNavbar({ absolute, light, isMini }) {
             <MDBox pr={1}>
               <MDInput label="Search here" />
             </MDBox>
-            <MDBox color={light ? "white" : "inherit"}>
-              <Link to="/authentication/sign-in/basic">
+            <MDBox color={light ? "white" : "inherit"} >
+              <Link onClick={clearCacheAndRedirect} to="#">
                 <IconButton sx={navbarIconButton} size="small" disableRipple>
                   <Icon sx={iconsStyle}>account_circle</Icon>
                 </IconButton>
