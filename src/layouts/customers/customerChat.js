@@ -30,7 +30,7 @@ function CustomerChat() {
   const handleGetInfoCustomer = async () => {
     setLoading(true);
     await axios
-      .get(`https://www.jetdan9878.online/api/v1/quicklearning/details/${id}`)
+      .get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/details/${id}`)
       .then((response) => {
         setCustomer(response.data.customer);
         setIa(response.data.customer.ia);
@@ -42,18 +42,15 @@ function CustomerChat() {
   };
 
   const handleGetChat = async () => {
-    // if (!customer) return handleGetChat();
-    await axios
-      .post("https://www.jetdan9878.online/api/v2/whastapp/logs-messages", {
-        to: `whatsapp:+${customer.phone}`,
-      })
-      .then((response) => {
-        setMessages(response.data.findMessages.reverse());
-        setLoading(false);
-      })
-      .catch((error) => {
-        setLoading(false);
-      });
+
+    await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/chat/messages/${customer.phone}`)
+    .then((response) => {
+      setMessages(response.data.messages);
+    }).catch((error) => {
+      console.log("error", error);
+    }).finally(() => {
+      setLoading(false);
+    });
   };
 
   const handleToggleIA = async () => {
@@ -141,7 +138,7 @@ function CustomerChat() {
             </Button>
 
             <TextField
-            sx={{ marginTop: "16px" }}
+              sx={{ marginTop: "16px" }}
               fullWidth
               variant="outlined"
               size="small"
