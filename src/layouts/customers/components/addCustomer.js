@@ -66,7 +66,7 @@ const AddCustomer = () => {
     console.log("data", data);
 
     axios
-      .post("https://www.jetdan9878.online/api/v1/customer/addcustomer", data)
+      .post(`${process.env.REACT_APP_API_URL}/api/v1/customer/addcustomer`, data)
       .then((response) => {
         console.log(response);
         navigate("/customer");

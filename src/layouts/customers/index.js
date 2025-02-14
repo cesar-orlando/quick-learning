@@ -44,101 +44,247 @@ function Customer() {
   const navigate = useNavigate();
 
   const getCustomers = async () => {
-    const apiUrl = process.env.REACT_APP_API_URL;
     try {
-      axios
-        .get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/list`)
-        .then((res) => {
-          console.log("res", res.data.customers);
-          const filterData = res.data.customers.map((item) => {
-            return {
-              name: (
-                <MDBox display="flex" alignItems="left">
-                  <MDBox
-                    lineHeight={1}
-                    sx={{
-                      maxWidth: "200px", // Fija el ancho máximo del contenedor
-                      whiteSpace: "normal", // Permite saltos de línea
-                      wordWrap: "break-word", // Ajusta palabras largas
-                      overflowWrap: "break-word", // Compatibilidad adicional
-                    }}
-                  >
-                    <MDTypography
-                      display="block"
-                      variant="button"
-                      fontWeight="medium"
+      const getPermissions = sessionStorage.getItem("permissions");
+      const getUser = sessionStorage.getItem("user");
+      if (getPermissions === "1") {
+        await axios
+          .get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/list`)
+          .then((res) => {
+            const filterData = res.data.customers.map((item) => {
+              return {
+                name: (
+                  <MDBox display="flex" alignItems="left">
+                    <MDBox
+                      lineHeight={1}
                       sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
+                        maxWidth: "200px", // Fija el ancho máximo del contenedor
+                        whiteSpace: "normal", // Permite saltos de línea
                         wordWrap: "break-word", // Ajusta palabras largas
                         overflowWrap: "break-word", // Compatibilidad adicional
                       }}
                     >
-                      {item.name}
-                    </MDTypography>
-                    <MDTypography
-                      variant="caption"
-                      sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
-                        wordWrap: "break-word",
-                        overflowWrap: "break-word",
-                      }}
-                    >
-                      {item.email}
-                    </MDTypography>
+                      <MDTypography
+                        display="block"
+                        variant="button"
+                        fontWeight="medium"
+                        sx={{
+                          whiteSpace: "normal", // Forza saltos de línea
+                          wordWrap: "break-word", // Ajusta palabras largas
+                          overflowWrap: "break-word", // Compatibilidad adicional
+                        }}
+                      >
+                        {item.name}
+                      </MDTypography>
+                      <MDTypography
+                        variant="caption"
+                        sx={{
+                          whiteSpace: "normal", // Forza saltos de línea
+                          wordWrap: "break-word",
+                          overflowWrap: "break-word",
+                        }}
+                      >
+                        {item.email}
+                      </MDTypography>
+                    </MDBox>
                   </MDBox>
-                </MDBox>
-              ),
-              phone: item.phone,
-              comments: (
-                <MDBox display="flex" alignItems="left">
-                  <MDBox
-                    lineGeight={1}
-                    fontSize={16}
-                    sx={{
-                      maxWidth: "300px", // Fija el ancho máximo del contenedor
-                      whiteSpace: "normal", // Permite saltos de línea
-                      wordWrap: "break-word", // Ajusta palabras largas
-                      overflowWrap: "break-word", // Compatibilidad adicional
-                    }}
-                  >
-                    <MDTypography
-                      display="block"
-                      variant="button"
-                      fontWeight="medium"
+                ),
+                phone: item.phone,
+                comments: (
+                  <MDBox display="flex" alignItems="left">
+                    <MDBox
+                      lineGeight={1}
+                      fontSize={16}
                       sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
+                        maxWidth: "300px", // Fija el ancho máximo del contenedor
+                        whiteSpace: "normal", // Permite saltos de línea
                         wordWrap: "break-word", // Ajusta palabras largas
                         overflowWrap: "break-word", // Compatibilidad adicional
                       }}
                     >
-                      {item.comments}
-                    </MDTypography>
+                      <MDTypography
+                        display="block"
+                        variant="button"
+                        fontWeight="medium"
+                        sx={{
+                          whiteSpace: "normal", // Forza saltos de línea
+                          wordWrap: "break-word", // Ajusta palabras largas
+                          overflowWrap: "break-word", // Compatibilidad adicional
+                        }}
+                      >
+                        {item.comments}
+                      </MDTypography>
+                    </MDBox>
                   </MDBox>
-                </MDBox>
-              ),
-              status: item.status,
-              employee: "Eduardo",
-              action: (
-                <PopupState variant="popover" popupId="demo-popup-menu">
-                  {(popupState) => (
-                    <Fragment>
-                      <MoreVertIcon color="#000000" {...bindTrigger(popupState)} />
-                      <Menu {...bindMenu(popupState)}>
-                        <MenuItem onClick={() => editCustomer(item, popupState)}>Editar </MenuItem>
-                        <MenuItem onClick={() => viewChat(item, popupState)}>Ver Chat </MenuItem>
-                      </Menu>
-                    </Fragment>
-                  )}
-                </PopupState>
-              ),
-            };
+                ),
+                status: item.status,
+                employee: "Eduardo",
+                action: (
+                  <PopupState variant="popover" popupId="demo-popup-menu">
+                    {(popupState) => (
+                      <Fragment>
+                        <MoreVertIcon color="#000000" {...bindTrigger(popupState)} />
+                        <Menu {...bindMenu(popupState)}>
+                          <MenuItem onClick={() => editCustomer(item, popupState)}>Editar </MenuItem>
+                          <MenuItem onClick={() => viewChat(item, popupState)}>Ver Chat </MenuItem>
+                        </Menu>
+                      </Fragment>
+                    )}
+                  </PopupState>
+                ),
+              };
+            });
+            setCompanies(filterData);
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.error(err);
           });
-          setCompanies(filterData);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error(err);
-        });
+      } else {
+        await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/customers/last-message/${getUser}`)
+          .then((res) => {
+            const filterData = res.data.customers.map((item) => {
+              return {
+                name: (
+                  <MDBox display="flex" alignItems="left">
+                    <MDBox
+                      lineHeight={1}
+                      sx={{
+                        maxWidth: "200px", // Fija el ancho máximo del contenedor
+                        whiteSpace: "normal", // Permite saltos de línea
+                        wordWrap: "break-word", // Ajusta palabras largas
+                        overflowWrap: "break-word", // Compatibilidad adicional
+                      }}
+                    >
+                      <MDTypography
+                        display="block"
+                        variant="button"
+                        fontWeight="medium"
+                        sx={{
+                          whiteSpace: "normal", // Forza saltos de línea
+                          wordWrap: "break-word", // Ajusta palabras largas
+                          overflowWrap: "break-word", // Compatibilidad adicional
+                        }}
+                      >
+                        {item.name}
+                      </MDTypography>
+                      <MDTypography
+                        variant="caption"
+                        sx={{
+                          whiteSpace: "normal", // Forza saltos de línea
+                          wordWrap: "break-word",
+                          overflowWrap: "break-word",
+                        }}
+                      >
+                        {item.phone}
+                      </MDTypography>
+                    </MDBox>
+                  </MDBox>
+                ),
+                lastmessage:
+                  <MDBox display="flex" alignItems="left">
+                    <MDBox
+                      lineGeight={1}
+                      fontSize={12}
+                      fontWeight="medium"
+                      sx={{
+                        maxWidth: "300px", // Fija el ancho máximo del contenedor
+                        whiteSpace: "normal", // Permite saltos de línea
+                        wordWrap: "break-word", // Ajusta palabras largas
+                        overflowWrap: "break-word", // Compatibilidad adicional
+                      }}
+                    >
+                      <MDTypography
+                        display="block"
+                        variant="string"
+                        sx={{
+                          whiteSpace: "normal", // Forza saltos de línea
+                          wordWrap: "break-word", // Ajusta palabras largas
+                          overflowWrap: "break-word", // Compatibilidad adicional
+                        }}
+                      >
+                        {item.lastMessage.body}
+                      </MDTypography>
+                      <MDTypography
+                        variant="caption"
+                      >
+                        {new Date(item.lastMessage.dateCreated).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}
+                      </MDTypography>
+                    </MDBox>
+                  </MDBox>,
+                comments: (
+                  <MDBox display="flex" alignItems="left">
+                    <MDBox
+                      lineGeight={4}
+                      fontSize={12}
+                      fontWeight="medium"
+                      sx={{
+                        maxWidth: "300px", // Fija el ancho máximo del contenedor
+                        whiteSpace: "normal", // Permite saltos de línea
+                        wordWrap: "break-word", // Ajusta palabras largas
+                        overflowWrap: "break-word", // Compatibilidad adicional
+                      }}
+                    >
+                      <MDTypography
+                        variant="string"
+                        sx={{
+                          whiteSpace: "normal", // Forza saltos de línea
+                          wordWrap: "break-word", // Ajusta palabras largas
+                          overflowWrap: "break-word", // Compatibilidad adicional
+                        }}
+                      >
+                        {item.comments}
+                      </MDTypography>
+                    </MDBox>
+                  </MDBox>
+                ),
+                status: 
+                <MDBox display="flex" alignItems="left">
+                <MDBox
+                  lineGeight={1}
+                  fontSize={12}
+                  fontWeight="medium"
+                  sx={{
+                    maxWidth: "300px", // Fija el ancho máximo del contenedor
+                    whiteSpace: "normal", // Permite saltos de línea
+                    wordWrap: "break-word", // Ajusta palabras largas
+                    overflowWrap: "break-word", // Compatibilidad adicional
+                  }}
+                >
+                  <MDTypography
+                    variant="string"
+                    fontSize={12}
+                    sx={{
+                      whiteSpace: "normal", // Forza saltos de línea
+                      wordWrap: "break-word", // Ajusta palabras largas
+                      overflowWrap: "break-word", // Compatibilidad adicional
+                    }}
+                  >
+                    {item.status}
+                  </MDTypography>
+                  </MDBox>   
+                  </MDBox>,             
+                action: (
+                  <PopupState variant="popover" popupId="demo-popup-menu">
+                    {(popupState) => (
+                      <Fragment>
+                        <MoreVertIcon color="#000000" {...bindTrigger(popupState)} />
+                        <Menu {...bindMenu(popupState)}>
+                          <MenuItem onClick={() => editCustomer(item, popupState)}>Editar </MenuItem>
+                          <MenuItem onClick={() => viewChat(item, popupState)}>Ver Chat </MenuItem>
+                        </Menu>
+                      </Fragment>
+                    )}
+                  </PopupState>
+                ),
+              };
+            });
+            setCompanies(filterData);
+            setLoading(false);
+          }).catch((err) => {
+            console.error(err);
+          });
+      }
     } catch (error) {
       console.error(error);
     }
@@ -150,10 +296,9 @@ function Customer() {
 
   const columns = [
     { Header: "Cliente", accessor: "name", width: "15%", align: "left" },
-    { Header: "Número", accessor: "phone", align: "left" },
-    { Header: "Comentarios", accessor: "comments", align: "center" },
+    { Header: "Ultimo Mensaje", accessor: "lastmessage", width: "15%", align: "left" },
+    { Header: "Comentarios", accessor: "comments", width: "15%", align: "center" },
     { Header: "Status", accessor: "status", align: "center" },
-    { Header: "Asesor", accessor: "employee", align: "center" },
     { Header: "Acciones", accessor: "action", align: "center" },
   ];
 
@@ -269,7 +414,7 @@ function Customer() {
                       </MDTypography>
                     </MDButton>
                     <MDBox px={3}>
-                      <UploadButton functionToCall={downloadExcel} />
+                      {/* <UploadButton functionToCall={downloadExcel} /> */}
                     </MDBox>
                   </MDBox>
 

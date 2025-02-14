@@ -15,8 +15,9 @@ import {
   circularProgressClasses,
 } from "@mui/material";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Loading from "components/Loading/Loading";
+import ActionButton from "components/ActionButton/ActionButton";
 
 function CustomerChat() {
   const { id } = useParams(); // Obtiene el parámetro `id` de la URL
@@ -26,6 +27,8 @@ function CustomerChat() {
   const [loading, setLoading] = useState(false);
   const [ia, setIa] = useState(true); // Estado para manejar el valor de `ia`
   const [comments, setComments] = useState("");
+    const navigate = useNavigate();
+  
 
   const handleGetInfoCustomer = async () => {
     setLoading(true);
@@ -43,14 +46,40 @@ function CustomerChat() {
 
   const handleGetChat = async () => {
 
+    if (!customer.phone) {
+      return;
+    }
+
     await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/chat/messages/${customer.phone}`)
-    .then((response) => {
-      setMessages(response.data.messages);
-    }).catch((error) => {
-      console.log("error", error);
-    }).finally(() => {
-      setLoading(false);
-    });
+      .then((response) => {
+        setMessages(response.data.messages);
+        setLoading(false);
+      }).catch((error) => {
+        console.log("error", error.data);
+        console.log("entra aqui errorData");
+        let data = JSON.stringify({
+          "to": `whatsapp:+${customer.phone}`
+        });
+        let config = {
+          method: 'post',
+          maxBodyLength: Infinity,
+          url: `${process.env.REACT_APP_API_URL}/api/v2/whastapp/logs-messages`,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          data: data
+        };
+        axios.request(config)
+          .then((response) => {
+            console.log(JSON.stringify(response.data));
+            setMessages(response.data.findMessages);
+          })
+          .catch((error) => {
+            console.log(error);
+          }).finally(() => {
+            setLoading(false);
+          });
+      });
   };
 
   const handleToggleIA = async () => {
@@ -131,30 +160,12 @@ function CustomerChat() {
             padding: "16px",
           }}
         >
-          {/* Botón para activar/desactivar IA */}
-          <Box sx={{ marginRight: "16px" }}>
-            <Button variant="contained" color={ia ? "white" : "primary"} sx={{ color: "primary" }} onClick={handleToggleIA}>
-              {ia ? "Desactivar IA" : "Activar IA"}
-            </Button>
-
-            <TextField
-              sx={{ marginTop: "16px" }}
-              fullWidth
-              variant="outlined"
-              size="small"
-              value={comments}
-              onChange={(e) => setComments(e.target.value)}
-              placeholder="Comentarios"
-              multiline
-              rows={6}
-            />
-          </Box>
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
-              width: "800px",
+              flex: 1,
               height: "600px",
               border: "1px solid #ccc",
               borderRadius: "8px",
@@ -162,10 +173,16 @@ function CustomerChat() {
               backgroundColor: "#f9f9f9",
             }}
           >
+
             {/* Title */}
             <Typography variant="h6" align="center" gutterBottom>
               Chat with {customer.name} ({customer.phone})
             </Typography>
+
+            <Box sx={{ display: "flex", justifyContent: "center", gap: "16px", marginBottom: "16px" }}>
+              <ActionButton data={ia ? "Desactivar IA" : "Activar IA"} onClick={handleToggleIA} icon="IA" />
+              <ActionButton data="Editar" onClick={() => navigate(`/customer/${customer._id}`)}  />
+            </Box>
 
             {/* Messages Area */}
             <Box
@@ -195,12 +212,15 @@ function CustomerChat() {
                         padding: "8px",
                         margin: "8px 0",
                       }}
-                      primary={msg.body}
+                      primary={<Typography variant="body2"> {/* Cambia el tamaño del texto aquí */}
+                        {msg.body}
+                      </Typography>}
                       secondary={
                         <Typography variant="caption" color="textSecondary">
                           {new Date(msg.dateCreated).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}
                         </Typography>
                       }
+
                     />
                   </ListItem>
                 ))}

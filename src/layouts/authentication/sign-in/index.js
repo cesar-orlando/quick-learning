@@ -54,7 +54,7 @@ function Basic() {
 
   const handleLogin = () => {
     axios
-      .post("https://www.jetdan9878.online/api/v1/user/login", {
+      .post(`${process.env.REACT_APP_API_URL}/api/v1/user/login`, {
         email,
         password,
         //company:"QuickLearning"
