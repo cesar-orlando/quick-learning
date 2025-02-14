@@ -108,15 +108,32 @@ function CustomerChat() {
 
   // Handle sending messages
   const sendMessage = () => {
+    setLoading(true);
     axios.post(`${process.env.REACT_APP_API_URL}/api/v2/whastapp`, {
       to: `whatsapp:+${customer.phone}`,
       message: input,
     }).then((response) => {
       console.log(response);
+      axios.get(`${process.env.REACT_APP_API_URL}/api/v1/chat/sync-chat/${customer.phone}`).then((response) => {
+        console.log(response);
+      }).catch((error) => {
+        console.log(error);
+      });
     }).catch((error) => {
       console.log(error);
     }).finally(() => {
       setInput("");
+      handleGetChat();
+    });
+  };
+
+  const handleSynchat = () => {
+    setLoading(true);
+    axios.get(`${process.env.REACT_APP_API_URL}/api/v1/chat/sync-chat/${customer.phone}`).then((response) => {
+      console.log(response);
+    }).catch((error) => {
+      console.log(error);
+    }).finally(() => {
       handleGetChat();
     });
   };
@@ -182,6 +199,7 @@ function CustomerChat() {
             <Box sx={{ display: "flex", justifyContent: "center", gap: "16px", marginBottom: "16px" }}>
               <ActionButton data={ia ? "Desactivar IA" : "Activar IA"} onClick={handleToggleIA} icon="IA" />
               <ActionButton data="Editar" onClick={() => navigate(`/customer/${customer._id}`)}  />
+              <ActionButton data="Sync" onClick={handleSynchat}  />
             </Box>
 
             {/* Messages Area */}
