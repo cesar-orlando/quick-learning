@@ -393,12 +393,13 @@ function Customers() {
                       label="Filtrar por Estado"
                       sx={{ height: 50 }}
                     >
-                      <MenuItem value="">
+                      <MenuItem value=""> 
                         <em>Todos</em>
                       </MenuItem>
                       <MenuItem value="En conversación">En conversación</MenuItem>
                       <MenuItem value="Prospecto">Prospecto</MenuItem>
-                      <MenuItem value="Listo para venta">Listo para venta</MenuItem>
+                      <MenuItem value="Interesado">Interesado</MenuItem>
+                      <MenuItem value="Sin interacción">Sin interacción</MenuItem>
                     </Select>
                   </FormControl>
                 </MDBox>
