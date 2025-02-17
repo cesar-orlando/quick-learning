@@ -114,6 +114,7 @@ function DataTable({
 
   // Search input state handle
   const onSearchChange = useAsyncDebounce((value) => {
+    console.log("value", value);
     setGlobalFilter(value || undefined);
   }, 100);
 
@@ -150,22 +151,10 @@ function DataTable({
     <TableContainer sx={{ boxShadow: "none" }}>
       <MDBox display="flex" alignItems="center" p={3}>
         <MDBox display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  gap={5}
-                 >
-          <MDBox width="25rem">
-            <MDInput
-              placeholder="Search..."
-              value={search}
-              size="medium"
-              fullWidth
-              onChange={({ currentTarget }) => {
-                setSearch(search);
-                onSearchChange(currentTarget.value);
-              }}
-            />
-          </MDBox>
+          alignItems="center"
+          justifyContent="space-between"
+          gap={5}
+        >
         </MDBox>
       </MDBox>
       <Table {...getTableProps()}>
