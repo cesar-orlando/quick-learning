@@ -1,33 +1,13 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-import { useState } from "react";
-
-// react-router-dom components
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { Snackbar, Alert } from "@mui/material"; // Importa Snackbar y Alert
+import BasicLayout from "layouts/authentication/components/BasicLayout"; // Asegúrate de importar tu componente
+import Card from "@mui/material/Card"; // Asegúrate de importar tu componente
+import bgImage from "assets/images/bg-sign-in-basic.jpeg"; // Asegúrate de importar tu imagen
 
 // @mui material components
-import Card from "@mui/material/Card";
 import Switch from "@mui/material/Switch";
-import Grid from "@mui/material/Grid";
-import MuiLink from "@mui/material/Link";
-
-// @mui icons
-import FacebookIcon from "@mui/icons-material/Facebook";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import GoogleIcon from "@mui/icons-material/Google";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -35,18 +15,16 @@ import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 
-// Authentication layout components
-import BasicLayout from "layouts/authentication/components/BasicLayout";
-
 // Images
-import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 import { TextField } from "@mui/material";
-import axios from "axios";
 
-function Basic() {
+const SignIn = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
   const navigate = useNavigate();
 
@@ -64,12 +42,21 @@ function Basic() {
         sessionStorage.setItem("user", response.data.user._id);
         sessionStorage.setItem("token", response?.data.token);
         sessionStorage.setItem("permissions", response.data.user.permissions);
+        setSnackbarMessage("Inicio de sesión exitoso");
+        setSnackbarSeverity("success");
+        setOpenSnackbar(true);
         navigate("/dashboard", { replace: true });
-
       })
       .catch((error) => {
         console.log(error);
+        setSnackbarMessage("Error al iniciar sesión");
+        setSnackbarSeverity("error");
+        setOpenSnackbar(true);
       });
+  };
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
   };
 
   return (
@@ -131,9 +118,14 @@ function Basic() {
             </MDBox>
           </MDBox>
         </MDBox>
+        <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar}>
+          <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} variant="filled" sx={{ width: '100%' }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </Card>
     </BasicLayout>
   );
-}
+};
 
-export default Basic;
+export default SignIn;

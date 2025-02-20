@@ -21,12 +21,13 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Loading from "components/Loading/Loading";
 import Dropdown from "components/Dropdown/Dropdown";
 import DropdownChat from "components/DropdownChat/DropDownChat";
+import { customerService } from "services/customer";
 
 function Customers() {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState(""); // Estado del filtro de status
   const [searchTerm, setSearchTerm] = useState(""); // Estado del campo de búsqueda
-  const [companies, setCompanies] = useState([]);
+  const [customer, setCustomer] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ia, setIa] = useState(true); // Estado para manejar el valor de `ia`
   const [selectedItem, setSelectedItem] = useState(null);
@@ -35,239 +36,27 @@ function Customers() {
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
   useEffect(() => {
-    getCustomers();
+    getData();
   }, []);
 
-  const getCustomers = async () => {
+  const getData = async () => {
     try {
-      const getPermissions = sessionStorage.getItem("permissions");
-      const getUser = sessionStorage.getItem("user");
-
-      if (getPermissions === "1") {
-        await axios
-          .get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/list`)
-          .then((res) => {
-            const filterData = res.data.customers.map((item) => ({
-              nameText: item.name.toLowerCase(),
-              phoneText: item.phone.toLowerCase(),
-              statusText: item.status || "Desconocido",
-              ia: item.ia,
-              name: (
-                <MDBox display="flex" alignItems="left">
-                  <MDBox
-                    lineHeight={1}
-                    sx={{
-                      maxWidth: "200px", // Fija el ancho máximo del contenedor
-                      whiteSpace: "normal", // Permite saltos de línea
-                      wordWrap: "break-word", // Ajusta palabras largas
-                      overflowWrap: "break-word", // Compatibilidad adicional
-                    }}
-                  >
-                    <MDTypography
-                      display="block"
-                      variant="button"
-                      fontWeight="medium"
-                      sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
-                        wordWrap: "break-word", // Ajusta palabras largas
-                        overflowWrap: "break-word", // Compatibilidad adicional
-                      }}
-                    >
-                      {item.name}
-                    </MDTypography>
-                    <MDTypography
-                      variant="caption"
-                      sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
-                        wordWrap: "break-word",
-                        overflowWrap: "break-word",
-                      }}
-                    >
-                      {item.phone}
-                    </MDTypography>
-                  </MDBox>
-                </MDBox>
-              ),
-              lastmessage:
-                <MDBox display="flex" alignItems="left">
-                  <DropdownChat
-                    id={item._id}
-                    messages={item.messages}
-                    customer={item}
-                    getCustomers={getCustomers}
-                  />
-                </MDBox>,
-              status: (
-                <MDBox display="flex" alignItems="left">
-                  <MDBox
-                    lineHeight={1}
-                    sx={{
-                      maxWidth: "200px", // Fija el ancho máximo del contenedor
-                      whiteSpace: "normal", // Permite saltos de línea
-                      wordWrap: "break-word", // Ajusta palabras largas
-                      overflowWrap: "break-word", // Compatibilidad adicional
-                    }}
-                  >
-                    <MDTypography
-                      display="block"
-                      variant="button"
-                      fontWeight="medium"
-                      sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
-                        wordWrap: "break-word", // Ajusta palabras largas
-                        overflowWrap: "break-word", // Compatibilidad adicional
-                      }}
-                    >
-                      {item.status}
-                    </MDTypography>
-                    <MDTypography
-                      variant="caption"
-                      sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
-                        wordWrap: "break-word",
-                        overflowWrap: "break-word",
-                      }}
-                    >
-                      {item.classification}
-                    </MDTypography>
-                  </MDBox>
-                </MDBox>
-              ),
-              action: (
-                <PopupState variant="popover" popupId="menu-popup">
-                  {(popupState) => (
-                    <Fragment>
-                      <MoreVertIcon {...bindTrigger(popupState)} />
-                      <Menu {...bindMenu(popupState)}>
-                        <MenuItem onClick={() => editCustomer(item, popupState)}>Editar</MenuItem>
-                        <MenuItem onClick={() => viewChat(item, popupState)}>Ver Chat</MenuItem>
-                        <MenuItem onClick={() => handleToggleIA(item, popupState)}>{item.ia ? "Desactivar IA" : "Activar IA"}</MenuItem>
-                      </Menu>
-                    </Fragment>
-                  )}
-                </PopupState>
-              ),
-            }));
-            setCompanies(filterData);
-            setLoading(false);
-          })
-          .catch((err) => {
-            console.error(err);
-          });
+      const { data, loading, success } = await customerService.getCustomers(editCustomer, viewChat, handleToggleIA);
+      setCustomer(data);
+      setLoading(loading);
+      if (success) {
+        setSnackbarMessage("Datos cargados correctamente");
+        setSnackbarSeverity("success");
       } else {
-        await axios
-          .get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/customers/conversations/${getUser}`)
-          .then((res) => {
-            const filterData = res.data.customers.map((item) => ({
-              nameText: item.name.toLowerCase(),
-              phoneText: item.phone.toLowerCase(),
-              statusText: item.status || "Desconocido",
-              ia: item.ia,
-              name: (
-                <MDBox display="flex" alignItems="left">
-                  <MDBox
-                    lineHeight={1}
-                    sx={{
-                      maxWidth: "200px", // Fija el ancho máximo del contenedor
-                      whiteSpace: "normal", // Permite saltos de línea
-                      wordWrap: "break-word", // Ajusta palabras largas
-                      overflowWrap: "break-word", // Compatibilidad adicional
-                    }}
-                  >
-                    <MDTypography
-                      display="block"
-                      variant="button"
-                      fontWeight="medium"
-                      sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
-                        wordWrap: "break-word", // Ajusta palabras largas
-                        overflowWrap: "break-word", // Compatibilidad adicional
-                      }}
-                    >
-                      {item.name}
-                    </MDTypography>
-                    <MDTypography
-                      variant="caption"
-                      sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
-                        wordWrap: "break-word",
-                        overflowWrap: "break-word",
-                      }}
-                    >
-                      {item.phone}
-                    </MDTypography>
-                  </MDBox>
-                </MDBox>
-              ),
-              lastmessage:
-                <MDBox display="flex" alignItems="left">
-                  <DropdownChat
-                    id={item._id}
-                    messages={item.messages}
-                    customer={item}
-                    getCustomers={getCustomers}
-                  />
-                </MDBox>,
-              status: (
-                <MDBox display="flex" alignItems="left">
-                  <MDBox
-                    lineHeight={1}
-                    sx={{
-                      maxWidth: "200px", // Fija el ancho máximo del contenedor
-                      whiteSpace: "normal", // Permite saltos de línea
-                      wordWrap: "break-word", // Ajusta palabras largas
-                      overflowWrap: "break-word", // Compatibilidad adicional
-                    }}
-                  >
-                    <MDTypography
-                      display="block"
-                      variant="button"
-                      fontWeight="medium"
-                      sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
-                        wordWrap: "break-word", // Ajusta palabras largas
-                        overflowWrap: "break-word", // Compatibilidad adicional
-                      }}
-                    >
-                      {item.status}
-                    </MDTypography>
-                    <MDTypography
-                      variant="caption"
-                      sx={{
-                        whiteSpace: "normal", // Forza saltos de línea
-                        wordWrap: "break-word",
-                        overflowWrap: "break-word",
-                      }}
-                    >
-                      {item.classification}
-                    </MDTypography>
-                  </MDBox>
-                </MDBox>
-              ),
-              action: (
-                <PopupState variant="popover" popupId="menu-popup">
-                  {(popupState) => (
-                    <Fragment>
-                      <MoreVertIcon {...bindTrigger(popupState)} />
-                      <Menu {...bindMenu(popupState)}>
-                        <MenuItem onClick={() => editCustomer(item, popupState)}>Editar</MenuItem>
-                        <MenuItem onClick={() => viewChat(item, popupState)}>Ver Chat</MenuItem>
-                        <MenuItem onClick={() => handleToggleIA(item, popupState)}>{item.ia ? "Desactivar IA" : "Activar IA"}</MenuItem>
-                      </Menu>
-                    </Fragment>
-                  )}
-                </PopupState>
-              ),
-            }));
-            setCompanies(filterData);
-            setLoading(false);
-          })
-          .catch((err) => {
-            console.error(err);
-          });
+        setSnackbarMessage("Error al cargar los datos");
+        setSnackbarSeverity("error");
       }
     } catch (error) {
       console.error(error);
+      setSnackbarMessage("Error al cargar los datos");
+      setSnackbarSeverity("error");
+    } finally {
+      setOpenSnackbar(true);
     }
   };
 
@@ -282,7 +71,7 @@ function Customers() {
   };
 
   // Filtrar datos según búsqueda y estado seleccionado
-  const filteredCompanies = companies.filter((company) => {
+  const filteredCompanies = customer.filter((company) => {
     const matchesSearch = company.nameText.includes(searchTerm.toLowerCase()) ||
       company.phoneText.includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "" || company.statusText === statusFilter;
@@ -314,7 +103,7 @@ function Customers() {
         console.log(error);
         handleError("Ocurrió un error");
       }).finally(() => {
-        getCustomers();
+        getData();
       });
   };
 
