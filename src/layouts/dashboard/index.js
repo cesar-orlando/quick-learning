@@ -167,4 +167,4 @@ function Dashboard() {
   );
 }
 
-export default withJWT(Dashboard);
+export default Dashboard;

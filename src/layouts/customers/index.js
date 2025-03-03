@@ -1,56 +1,40 @@
-import { useState, useEffect, Fragment } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import CircularProgress from "@mui/material/CircularProgress";
-import MDBox from "components/MDBox";
-import MDTypography from "components/MDTypography";
-import MDInput from "components/MDInput";
-import MDButton from "components/MDButton";
-import DataTable from "layouts/companies/components/DataTable";
-import PopupState, { bindTrigger, bindMenu } from "material-ui-popup-state";
+import { useState, useEffect, useRef } from "react";
+import { Box, Card, Typography, Snackbar, Alert, Drawer, IconButton, TextField } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { Box, Menu, Snackbar, Alert } from "@mui/material";
-import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
-import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Loading from "components/Loading/Loading";
-import Dropdown from "components/Dropdown/Dropdown";
-import DropdownChat from "components/DropdownChat/DropDownChat";
+import CloseIcon from "@mui/icons-material/Close";
+import DashboardLayout from "components/LayoutContainers/DashboardLayout";
 import { customerService } from "services/customer";
+import SendIcon from "@mui/icons-material/Send";
 
 function Customers() {
-  const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState(""); // Estado del filtro de status
-  const [searchTerm, setSearchTerm] = useState(""); // Estado del campo de búsqueda
-  const [customer, setCustomer] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [ia, setIa] = useState(true); // Estado para manejar el valor de `ia`
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [openDrawer, setOpenDrawer] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+  const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     getData();
   }, []);
 
+  useEffect(() => {
+    if (openDrawer && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [openDrawer, selectedCustomer]);
+
   const getData = async () => {
     try {
-      const { data, loading, success } = await customerService.getCustomers(editCustomer, viewChat, handleToggleIA);
-      setCustomer(data);
-      setLoading(loading);
-      if (success) {
-        setSnackbarMessage("Datos cargados correctamente");
-        setSnackbarSeverity("success");
-      } else {
-        setSnackbarMessage("Error al cargar los datos");
-        setSnackbarSeverity("error");
-      }
+      const { data, success } = await customerService.getCustomers();
+      setCustomers(data);
+      setLoading(false);
+      setSnackbarMessage(success ? "Datos cargados correctamente" : "Error al cargar los datos");
+      setSnackbarSeverity(success ? "success" : "error");
     } catch (error) {
       console.error(error);
       setSnackbarMessage("Error al cargar los datos");
@@ -60,172 +44,191 @@ function Customers() {
     }
   };
 
-  const editCustomer = async (item, popupState) => {
-    popupState.close();
-    navigate(`/customer/${item._id}`);
-    return;
-  };
-  const viewChat = async (item, popupState) => {
-    popupState.close();
-    navigate(`/customer/chat/${item._id}`);
+  const handleRowClick = (params) => {
+    setSelectedCustomer(params.row);
+    setOpenDrawer(true);
   };
 
-  // Filtrar datos según búsqueda y estado seleccionado
-  const filteredCompanies = customer.filter((company) => {
-    const matchesSearch = company.nameText.includes(searchTerm.toLowerCase()) ||
-      company.phoneText.includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "" || company.statusText === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const handleCloseDrawer = () => {
+    setOpenDrawer(false);
+  };
 
-  const handleToggleIA = async (item, popupState) => {
-    popupState.close();
-    const newIaValue = !item.ia; // Invertir el valor de `ia`
-    let data = JSON.stringify({ ia: newIaValue });
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
+    setLoading(true);
 
-    let config = {
-      method: "put",
-      maxBodyLength: Infinity,
-      url: `${process.env.REACT_APP_API_URL}/api/v1/quicklearning/update/${item._id}`,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: data,
-    };
-
-    axios
-      .request(config)
-      .then((response) => {
-        setIa(newIaValue); // Actualizar el estado `ia`
-        handleSuccess("Operación exitosa");
-      })
-      .catch((error) => {
-        console.log(error);
-        handleError("Ocurrió un error");
-      }).finally(() => {
-        getData();
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/v2/whatsapp`, {
+        to: `${selectedCustomer.phone}`,
+        message: newMessage,
       });
+
+      setSnackbarMessage("Mensaje enviado correctamente");
+      setSnackbarSeverity("success");
+      setOpenSnackbar(true);
+    } catch (error) {
+      console.error("Error al enviar el mensaje:", error);
+      setSnackbarMessage("Error al enviar el mensaje");
+      setSnackbarSeverity("error");
+      setOpenSnackbar(true);
+    } finally {
+      setLoading(false);
+      setNewMessage("");
+      getData();
+    }
   };
 
-  const handleCloseSnackbar = () => {
-    setOpenSnackbar(false);
+  const formatDate = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleString("es-MX", {
+      dateStyle: "short",
+      timeStyle: "short",
+      timeZone: "America/Mexico_City",
+    });
   };
 
-  const handleSuccess = (message) => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity("success");
-    setOpenSnackbar(true);
-  };
+  const columns = [
+    { field: "name", headerName: "Cliente", flex: 1, minWidth: 250 },
+    { field: "phone", headerName: "Teléfono", flex: 1, minWidth: 150 },
+    { field: "status", headerName: "Estado", flex: 1, minWidth: 150 },
+    { field: "classification", headerName: "Clasificación", flex: 1, minWidth: 150 },
+    { field: "userName", headerName: "Usuario", flex: 1, minWidth: 150 },
+    { field: "lastMessage", headerName: "Último mensaje", flex: 1, minWidth: 150 },
+  ];
 
-  const handleError = (message) => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity("error");
-    setOpenSnackbar(true);
-  };
+  console.log("customers", customers);
 
   return (
     <DashboardLayout>
-      <DashboardNavbar />
-      {loading ? (
-        <Box
+      <Box sx={{ width: "100%", display: "flex" }}>
+        <Card sx={{ flexGrow: 1, p: 3 }}>
+          <Typography variant="h4" gutterBottom>
+            Clientes
+          </Typography>
+          <Box sx={{ height: "88vh", width: "100%" }}>
+            <DataGrid
+              rows={customers}
+              columns={columns}
+              pageSize={50} // Aumentar el número de filas por página
+              autoPageSize
+              disableColumnMenu
+              disableSelectionOnClick
+              loading={loading}
+              onRowClick={handleRowClick}
+              rowHeight={38} // Reducir la altura de las filas
+              sx={{
+                width: "100%",
+                "& .MuiDataGrid-root": { borderRadius: "10px" },
+                "& .MuiDataGrid-columnHeaders": { backgroundColor: "#f5f5f5", fontWeight: "bold" },
+                fontSize: "0.8rem", // Reducir el tamaño de la fuente
+                fontWeight: "bold",
+              }}
+            />
+          </Box>
+        </Card>
+
+        {/* Panel lateral para chat */}
+        <Drawer
+          anchor="right"
+          open={openDrawer}
+          onClose={handleCloseDrawer}
           sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(255, 255, 255, 0.8)", // Fondo semitransparente
-            zIndex: 10, // Asegurarse de que esté por encima del contenido
+            width: "100vw",
+            "& .MuiDrawer-paper": {
+              width: "70vw",
+              display: "flex",
+              flexDirection: "column",
+            },
           }}
         >
-          <Loading /> {/* Usar el componente de carga aquí */}
-        </Box>
-      ) : (
-        <MDBox pt={6} pb={3}>
-          <Grid container spacing={6}>
-            <Grid item xs={12}>
-              <Card>
-                <MDBox
-                  mx={2}
-                  mt={-3}
-                  py={3}
-                  px={2}
-                  variant="gradient"
-                  bgColor="info"
-                  borderRadius="lg"
-                  coloredShadow="info"
-                >
-                  <MDTypography variant="h4" color="white">
-                    Clientes
-                  </MDTypography>
-                </MDBox>
-                <MDBox pt={3} px={3} display="flex" justifyContent="space-between" alignItems="center">
-                  {/* Campo de búsqueda */}
-                  <MDInput
-                    label="Buscar cliente..."
-                    variant="outlined"
-                    fullWidth
-                    sx={{ maxWidth: 400 }}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  {/* Filtro de status */}
-                  <FormControl variant="outlined" sx={{ minWidth: 200, height: 56 }}>
-                    <InputLabel sx={{ height: 50 }} id="status-filter-label">Filtrar por Estado</InputLabel>
-                    <Select
-                      labelId="status-filter-label"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      label="Filtrar por Estado"
-                      sx={{ height: 50 }}
-                    >
-                      <MenuItem value=""> 
-                        <em>Todos</em>
-                      </MenuItem>
-                      <MenuItem value="En conversación">En conversación</MenuItem>
-                      <MenuItem value="Prospecto">Prospecto</MenuItem>
-                      <MenuItem value="Interesado">Interesado</MenuItem>
-                      <MenuItem value="Sin interacción">Sin interacción</MenuItem>
-                    </Select>
-                  </FormControl>
-                </MDBox>
-                <MDBox pt={3}>
-                  <DataTable
-                    table={{
-                      columns: [
-                        { Header: "Cliente", accessor: "name", align: "left" },
-                        { Header: "Ultimo Mensaje", accessor: "lastmessage", align: "left" },
-                        { Header: "Estado", accessor: "status", align: "center" },
-                        { Header: "Acciones", accessor: "action", align: "center" },
-                      ],
-                      rows: filteredCompanies
+          <Box sx={{ display: "flex", height: "100%" }}>
+            {/* 📌 Sección de información del usuario */}
+            <Box sx={{ width: "40%", p: 2, borderRight: "1px solid #ddd", overflowY: "auto" }}>
+              <IconButton onClick={handleCloseDrawer} sx={{ float: "right" }}>
+                <CloseIcon />
+              </IconButton>
+              {selectedCustomer && (
+                <>
+                  <Typography variant="h6" fontWeight="bold">
+                    {selectedCustomer.name}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {selectedCustomer.phone}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Estado: <strong>{selectedCustomer.status}</strong>
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Clasificación: <strong>{selectedCustomer.classification}</strong>
+                  </Typography>
+                </>
+              )}
+            </Box>
+
+            {/* 📌 Sección del Chat */}
+            <Box sx={{ width: "60%", p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
+              {/* 📌 Lista de mensajes */}
+              <Box
+                sx={{
+                  flexGrow: 1,
+                  overflowY: "auto",
+                  p: 2,
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                {selectedCustomer?.messages.map((message) => (
+                  <Box
+                    key={message._id}
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: message.direction === "inbound" ? "flex-start" : "flex-end",
+                      mb: 1,
                     }}
-                    isSorted
-                    entriesPerPage={false}
-                    showTotalEntries={false}
-                    canSearch={false} // Ya implementamos el search manualmente
-                    noEndBorder
-                  />
-                </MDBox>
-              </Card>
-            </Grid>
-          </Grid>
-        </MDBox>
-      )}
-      {selectedItem && (
-        <DropdownChat
-          lastMessage={selectedItem.lastMessage.body}
-          lastMessageDate={new Date(selectedItem.lastMessage.dateCreated).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}
-        />
-      )}
-      <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar}>
-        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} variant="filled" sx={{ width: '100%' }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+                  >
+                    <Typography
+                      sx={{
+                        backgroundColor: message.direction === "inbound" ? "#e5e5ea" : "#2E96FC",
+                        color: message.direction === "inbound" ? "black" : "white",
+                        padding: "8px 12px",
+                        borderRadius: "10px",
+                        maxWidth: "75%", // 🔹 No ocupa todo el ancho
+                        wordBreak: "break-word", // 🔹 Ajusta palabras largas
+                        whiteSpace: "pre-wrap", // 🔹 Hace saltos de línea cuando es necesario
+                        display: "inline-block", // 🔹 Ajusta el tamaño al contenido
+                        fontSize: "0.9rem",
+                      }}
+                    >
+
+                      {message.direction === "inbound" ? "👤" : "🤖"} {message.body}
+                      <br />
+                      <strong>{formatDate(message.dateCreated)}</strong>
+                    </Typography>
+                  </Box>
+                ))}
+                <div ref={messagesEndRef} />
+              </Box>
+
+              {/* 📌 Input de mensaje */}
+              <Box sx={{ display: "flex", mt: 2 }}>
+                <TextField
+                  fullWidth
+                  placeholder="Escribe un mensaje..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                />
+                <IconButton color="primary" onClick={sendMessage}>
+                  <SendIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          </Box>
+        </Drawer>
+      </Box>
     </DashboardLayout>
   );
 }

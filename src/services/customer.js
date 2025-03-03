@@ -1,28 +1,22 @@
 import axios from "axios";
-import DropdownChat from "components/DropdownChat/DropDownChat";
-import MDBox from "components/MDBox";
-import MDTypography from "components/MDTypography";
-import { Fragment } from "react";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { Menu, MenuItem } from "@mui/material";
-import PopupState, { bindTrigger, bindMenu } from "material-ui-popup-state";
-
 
 export const customerService = {
   getCustomers,
 };
 
-async function getCustomers( editCustomer, viewChat, handleToggleIA ) {
+async function getCustomers() {
   try {
     const getPermissions = sessionStorage.getItem("permissions");
     const getUser = sessionStorage.getItem("user");
     let response;
+
     if (getPermissions === "1") {
       response = await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/list`);
     } else {
       response = await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/customers/conversations/${getUser}`);
     }
 
+    // 🟢 Función para obtener el emoji de estado
     const getFlagEmoji = (classification, status) => {
       if (classification === "Prospecto" && status === "Interesado") return "🟢";
       if (classification === "Prospecto") return "🟡";
@@ -32,116 +26,45 @@ async function getCustomers( editCustomer, viewChat, handleToggleIA ) {
       return "";
     };
 
+    // 🔹 Obtener información del usuario para cada cliente
+    const customersWithUserData = await Promise.all(response.data.customers.map(async (item) => {
+      try {
+        const userResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/user/${item.user}`);
+        const userData = userResponse.data.user;
 
-    const filterData = response.data.customers.map((item) => {
-      const flagEmoji = getFlagEmoji(item.classification, item.status);
-      return {
-      nameText: item.name.toLowerCase(),
-      phoneText: item.phone.toLowerCase(),
-      statusText: item.status || "Desconocido",
-      ia: item.ia,
-      name: (
-        <MDBox display="flex" alignItems="left">
-           <MDTypography variant="button" fontWeight="medium" sx={{ mr: 1 }}>
-              {flagEmoji}
-            </MDTypography>
-          <MDBox
-            lineHeight={1}
-            sx={{
-              maxWidth: "200px", // Fija el ancho máximo del contenedor
-              whiteSpace: "normal", // Permite saltos de línea
-              wordWrap: "break-word", // Ajusta palabras largas
-              overflowWrap: "break-word", // Compatibilidad adicional
-            }}
-          >
-            <MDTypography
-              display="block"
-              variant="button"
-              fontWeight="medium"
-              sx={{
-                whiteSpace: "normal", // Forza saltos de línea
-                wordWrap: "break-word", // Ajusta palabras largas
-                overflowWrap: "break-word", // Compatibilidad adicional
-              }}
-            >
-              {item.name}
-            </MDTypography>
-            <MDTypography
-              variant="caption"
-              sx={{
-                whiteSpace: "normal", // Forza saltos de línea
-                wordWrap: "break-word",
-                overflowWrap: "break-word",
-              }}
-            >
-              {item.phone}
-            </MDTypography>
-          </MDBox>
-        </MDBox>
-      ),
-      lastmessage: (
-        <MDBox display="flex" alignItems="left">
-          <DropdownChat
-            id={item._id}
-            messages={item.messages}
-            customer={item}
-            getCustomers={getCustomers}
-          />
-        </MDBox>
-      ),
-      status: (
-        <MDBox display="flex" alignItems="left">
-          <MDBox
-            lineHeight={1}
-            sx={{
-              maxWidth: "200px", // Fija el ancho máximo del contenedor
-              whiteSpace: "normal", // Permite saltos de línea
-              wordWrap: "break-word", // Ajusta palabras largas
-              overflowWrap: "break-word", // Compatibilidad adicional
-            }}
-          >
-            <MDTypography
-              display="block"
-              variant="button"
-              fontWeight="medium"
-              sx={{
-                whiteSpace: "normal", // Forza saltos de línea
-                wordWrap: "break-word", // Ajusta palabras largas
-                overflowWrap: "break-word", // Compatibilidad adicional
-              }}
-            >
-              {item.status}
-            </MDTypography>
-            <MDTypography
-              variant="caption"
-              sx={{
-                whiteSpace: "normal", // Forza saltos de línea
-                wordWrap: "break-word",
-                overflowWrap: "break-word",
-              }}
-            >
-              {item.classification}
-            </MDTypography>
-          </MDBox>
-        </MDBox>
-      ),
-      action: (
-        <PopupState variant="popover" popupId="menu-popup">
-          {(popupState) => (
-            <Fragment>
-              <MoreVertIcon {...bindTrigger(popupState)} />
-              <Menu {...bindMenu(popupState)}>
-                <MenuItem onClick={() => editCustomer(item, popupState)}>Editar</MenuItem>
-                <MenuItem onClick={() => viewChat(item, popupState)}>Ver Chat</MenuItem>
-                <MenuItem onClick={() => handleToggleIA(item, popupState)}>{item.ia ? "Desactivar IA" : "Activar IA"}</MenuItem>
-              </Menu>
-            </Fragment>
-          )}
-        </PopupState>
-      ),
-    }});
+        // Obtener solo el primer nombre
+        const firstName = userData.name.split(" ")[0];
 
-    return { data: filterData, loading: false, success: true };
+        return {
+          id: item._id,
+          name: item.name,
+          phone: item.phone,
+          flagEmoji: getFlagEmoji(item.classification, item.status),
+          messages: item.messages,
+          status: item.status || "Desconocido",
+          classification: item.classification || "Sin clasificar",
+          ia: item.ia,
+          user: item.user,
+          userName: firstName || "Desconocido" // Agregar el primer nombre del usuario
+        };
+      } catch (error) {
+        console.error(`Error fetching user data for user ID ${item.user}:`, error);
+        return {
+          id: item._id,
+          name: item.name,
+          phone: item.phone,
+          flagEmoji: getFlagEmoji(item.classification, item.status),
+          messages: item.messages,
+          status: item.status || "Desconocido",
+          classification: item.classification || "Sin clasificar",
+          ia: item.ia,
+          user: item.user,
+          userName: "Desconocido" // Valor por defecto en caso de error
+        };
+      }
+    }));
+
+    return { data: customersWithUserData, loading: false, success: true };
   } catch (error) {
     console.error(error);
     return { data: [], loading: false, success: false };
