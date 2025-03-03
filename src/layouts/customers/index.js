@@ -6,9 +6,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import DashboardLayout from "components/LayoutContainers/DashboardLayout";
 import { customerService } from "services/customer";
 import SendIcon from "@mui/icons-material/Send";
+import axios from "axios";
 
 function Customers() {
   const [customers, setCustomers] = useState([]);
+  const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDrawer, setOpenDrawer] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -16,6 +18,7 @@ function Customers() {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
   const [newMessage, setNewMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -28,10 +31,21 @@ function Customers() {
     }
   }, [openDrawer, selectedCustomer]);
 
+  useEffect(() => {
+    const results = customers.filter(customer =>
+      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.classification.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.userName.toLowerCase().includes(searchTerm.toLowerCase()));
+    setFilteredCustomers(results);
+  }, [searchTerm, customers]);
+
   const getData = async () => {
     try {
       const { data, success } = await customerService.getCustomers();
       setCustomers(data);
+      setFilteredCustomers(data);
       setLoading(false);
       setSnackbarMessage(success ? "Datos cargados correctamente" : "Error al cargar los datos");
       setSnackbarSeverity(success ? "success" : "error");
@@ -57,25 +71,37 @@ function Customers() {
     if (!newMessage.trim()) return;
     setLoading(true);
 
-    try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/api/v2/whatsapp`, {
-        to: `${selectedCustomer.phone}`,
-        message: newMessage,
-      });
+    console.log("selectedCustomer.phone", selectedCustomer.phone);
 
+
+    axios.post(`${process.env.REACT_APP_API_URL}/api/v2/whastapp`, {
+      to: `${selectedCustomer.phone}`,
+      message: newMessage,
+    }).then((response) => {
+      console.log("Mensaje enviado:", response);
       setSnackbarMessage("Mensaje enviado correctamente");
       setSnackbarSeverity("success");
       setOpenSnackbar(true);
-    } catch (error) {
+
+      // Actualizar la conversación del cliente seleccionado
+      const updatedCustomer = { ...selectedCustomer };
+      updatedCustomer.messages.push({
+        _id: new Date().getTime(), // Generar un ID temporal para el nuevo mensaje
+        body: newMessage,
+        direction: "outbound",
+        dateCreated: new Date().toISOString(),
+      });
+      setSelectedCustomer(updatedCustomer);
+    }).catch((error) => {
       console.error("Error al enviar el mensaje:", error);
       setSnackbarMessage("Error al enviar el mensaje");
       setSnackbarSeverity("error");
       setOpenSnackbar(true);
-    } finally {
+    }).finally(() => {
       setLoading(false);
       setNewMessage("");
       getData();
-    }
+    });
   };
 
   const formatDate = (isoString) => {
@@ -96,18 +122,28 @@ function Customers() {
     { field: "lastMessage", headerName: "Último mensaje", flex: 1, minWidth: 150 },
   ];
 
-  console.log("customers", customers);
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
 
   return (
     <DashboardLayout>
-      <Box sx={{ width: "100%", display: "flex" }}>
+      <Box sx={{ width: "100%", display: "flex", flexDirection: "column" }}>
         <Card sx={{ flexGrow: 1, p: 3 }}>
           <Typography variant="h4" gutterBottom>
             Clientes
           </Typography>
+          <TextField
+            label="Buscar"
+            variant="outlined"
+            fullWidth
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ mb: 2 }}
+          />
           <Box sx={{ height: "88vh", width: "100%" }}>
             <DataGrid
-              rows={customers}
+              rows={filteredCustomers}
               columns={columns}
               pageSize={50} // Aumentar el número de filas por página
               autoPageSize
@@ -221,7 +257,7 @@ function Customers() {
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && sendMessage()}
                 />
-                <IconButton color="primary" onClick={sendMessage}>
+                <IconButton color="primary" onClick={sendMessage} disabled={loading} >
                   <SendIcon />
                 </IconButton>
               </Box>
@@ -229,6 +265,18 @@ function Customers() {
           </Box>
         </Drawer>
       </Box>
+
+      {/* Snackbar para mostrar mensajes */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: "100%" }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </DashboardLayout>
   );
 }

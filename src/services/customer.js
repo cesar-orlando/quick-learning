@@ -48,7 +48,7 @@ async function getCustomers() {
           userName: firstName || "Desconocido" // Agregar el primer nombre del usuario
         };
       } catch (error) {
-        console.error(`Error fetching user data for user ID ${item.user}:`, error);
+        // console.error(`Error fetching user data for user ID ${item.user}:`, error);
         return {
           id: item._id,
           name: item.name,
