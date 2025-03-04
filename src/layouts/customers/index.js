@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Box, Card, Typography, Snackbar, Alert, Drawer, IconButton, TextField } from "@mui/material";
+import { Box, Card, Typography, Snackbar, Alert, Drawer, IconButton, TextField, Switch } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CloseIcon from "@mui/icons-material/Close";
@@ -104,6 +104,49 @@ function Customers() {
     });
   };
 
+  const updateCustomerIAStatus = async (customerId, iaStatus) => {
+    setLoading(true);
+    const customer = customers.find(c => c.id === customerId);
+    if (!customer) return setLoading(false); ;
+
+    const data = {
+      phone: customer.phone,
+      comments: customer.comments || "",
+      classification: customer.classification,
+      visitDetails: customer.visitDetails || { branch: "", date: null, time: "" },
+      enrollmentDetails: customer.enrollmentDetails || {
+        consecutive: null,
+        course: "",
+        modality: "",
+        state: "",
+        email: "",
+        source: "",
+        paymentType: ""
+      },
+      user: customer.user,
+      ia: iaStatus,
+      date: new Date().toISOString()
+    };
+
+    try {
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/updatecustomer`, data, {
+        headers: {
+          id: customerId,
+          'Content-Type': 'application/json'
+        }
+      });
+      setSnackbarMessage("Estado de IA actualizado correctamente");
+      setSnackbarSeverity("success");
+      setOpenSnackbar(true);
+      getData(); // Actualizar los datos después de la actualización
+    } catch (error) {
+      console.error("Error al actualizar el estado de IA:", error);
+      setSnackbarMessage("Error al actualizar el estado de IA");
+      setSnackbarSeverity("error");
+      setOpenSnackbar(true);
+    }
+  };
+
   const formatDate = (isoString) => {
     const date = new Date(isoString);
     return date.toLocaleString("es-MX", {
@@ -119,7 +162,22 @@ function Customers() {
     { field: "status", headerName: "Estado", flex: 1, minWidth: 150 },
     { field: "classification", headerName: "Clasificación", flex: 1, minWidth: 150 },
     { field: "userName", headerName: "Usuario", flex: 1, minWidth: 150 },
-    { field: "lastMessage", headerName: "Último mensaje", flex: 1, minWidth: 150 },
+    // { field: "lastMessage", headerName: "Último mensaje", flex: 1, minWidth: 150 },
+    {
+      field: "ia",
+      headerName: "IA",
+      flex: 1,
+      minWidth: 150,
+      renderCell: (params) => (
+        <Switch
+          checked={params.row.ia}
+          onChange={(e) => {
+            e.stopPropagation(); // Detener la propagación del evento de clic
+            updateCustomerIAStatus(params.row.id, e.target.checked);
+          }}
+        />
+      )
+    }
   ];
 
   const handleCloseSnackbar = () => {
