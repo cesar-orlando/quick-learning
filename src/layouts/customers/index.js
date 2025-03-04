@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Box, Card, Typography, Snackbar, Alert, Drawer, IconButton, TextField, Switch } from "@mui/material";
+import { Box, Card, Typography, Snackbar, Alert, Drawer, IconButton, TextField, Switch, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CloseIcon from "@mui/icons-material/Close";
@@ -7,6 +7,7 @@ import DashboardLayout from "components/LayoutContainers/DashboardLayout";
 import { customerService } from "services/customer";
 import SendIcon from "@mui/icons-material/Send";
 import axios from "axios";
+import withAuth from "middleware/withJWT";
 
 function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -73,7 +74,6 @@ function Customers() {
 
     console.log("selectedCustomer.phone", selectedCustomer.phone);
 
-
     axios.post(`${process.env.REACT_APP_API_URL}/api/v2/whastapp`, {
       to: `${selectedCustomer.phone}`,
       message: newMessage,
@@ -104,10 +104,42 @@ function Customers() {
     });
   };
 
+  const sendTemplateMessage = async () => {
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/v2/whastapp/send-message-quick-learning`, {
+        phone: selectedCustomer.phone,
+        name: selectedCustomer.name,
+      });
+      setSnackbarMessage("Mensaje de plantilla enviado correctamente");
+      setSnackbarSeverity("success");
+      setOpenSnackbar(true);
+    } catch (error) {
+      console.error("Error al enviar el mensaje de plantilla:", error);
+      setSnackbarMessage("Error al enviar el mensaje de plantilla");
+      setSnackbarSeverity("error");
+      setOpenSnackbar(true);
+    }
+  };
+
+  const shouldShowTemplateButton = () => {
+    if (!selectedCustomer || !selectedCustomer.messages.length) return true;
+
+    // Filtrar los mensajes entrantes del cliente
+    const inboundMessages = selectedCustomer.messages.filter(message => message.direction === "inbound");
+    if (!inboundMessages.length) return true;
+
+    const lastInboundMessage = inboundMessages[inboundMessages.length - 1];
+    const lastMessageDate = new Date(lastInboundMessage.dateCreated);
+    const now = new Date();
+    const hoursDifference = Math.abs(now - lastMessageDate) / 36e5;
+
+    return hoursDifference > 24;
+  };
+
   const updateCustomerIAStatus = async (customerId, iaStatus) => {
     setLoading(true);
     const customer = customers.find(c => c.id === customerId);
-    if (!customer) return setLoading(false); ;
+    if (!customer) return setLoading(false);
 
     const data = {
       phone: customer.phone,
@@ -162,7 +194,6 @@ function Customers() {
     { field: "status", headerName: "Estado", flex: 1, minWidth: 150 },
     { field: "classification", headerName: "Clasificación", flex: 1, minWidth: 150 },
     { field: "userName", headerName: "Usuario", flex: 1, minWidth: 150 },
-    // { field: "lastMessage", headerName: "Último mensaje", flex: 1, minWidth: 150 },
     {
       field: "ia",
       headerName: "IA",
@@ -171,8 +202,8 @@ function Customers() {
       renderCell: (params) => (
         <Switch
           checked={params.row.ia}
+          onClick={(e) => e.stopPropagation()} // Detener la propagación del evento de clic
           onChange={(e) => {
-            e.stopPropagation(); // Detener la propagación del evento de clic
             updateCustomerIAStatus(params.row.id, e.target.checked);
           }}
         />
@@ -308,16 +339,30 @@ function Customers() {
 
               {/* 📌 Input de mensaje */}
               <Box sx={{ display: "flex", mt: 2 }}>
-                <TextField
-                  fullWidth
-                  placeholder="Escribe un mensaje..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                />
-                <IconButton color="primary" onClick={sendMessage} disabled={loading} >
-                  <SendIcon />
-                </IconButton>
+                {shouldShowTemplateButton() ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={sendTemplateMessage}
+                    disabled={loading}
+                    sx={{ width: "100%", color: "primary" }} // Estilo para abarcar todo el espacio y texto blanco
+                  >
+                    <Typography variant="body3" color={"#FFFFFF"} >📝 Plantilla para retomar conversación</Typography>
+                  </Button>
+                ) : (
+                  <>
+                    <TextField
+                      fullWidth
+                      placeholder="Escribe un mensaje..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                    />
+                    <IconButton color="primary" onClick={sendMessage} disabled={loading}>
+                      <SendIcon />
+                    </IconButton>
+                  </>
+                )}
               </Box>
             </Box>
           </Box>
@@ -339,4 +384,4 @@ function Customers() {
   );
 }
 
-export default Customers;
+export default withAuth(Customers);
