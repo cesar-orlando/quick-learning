@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Box, Card, Typography, Snackbar, Alert, Drawer, IconButton, TextField, Switch, Button } from "@mui/material";
+import DownloadIcon from "@mui/icons-material/Download";
 import { DataGrid } from "@mui/x-data-grid";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CloseIcon from "@mui/icons-material/Close";
@@ -8,6 +9,8 @@ import { customerService } from "services/customer";
 import SendIcon from "@mui/icons-material/Send";
 import axios from "axios";
 import withAuth from "middleware/withJWT";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -21,6 +24,9 @@ function Customers() {
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const messagesEndRef = useRef(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
 
   useEffect(() => {
     getData();
@@ -33,14 +39,37 @@ function Customers() {
   }, [openDrawer, selectedCustomer]);
 
   useEffect(() => {
-    const results = customers.filter(customer =>
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.classification.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.userName.toLowerCase().includes(searchTerm.toLowerCase()));
-    setFilteredCustomers(results);
-  }, [searchTerm, customers]);
+    const filteredResults = customers.filter(customer => {
+      const matchesSearch =
+        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.classification.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.userName.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Obtener el último mensaje del usuario
+      const lastMessage = customer.messages?.length
+        ? customer.messages[customer.messages.length - 1]
+        : null;
+
+      // Si no hay fechas, solo filtra por búsqueda
+      if (!startDate || !endDate) {
+        return matchesSearch;
+      }
+
+      if (!lastMessage) return false; // Si no hay mensajes, no se muestra
+
+      const messageDate = new Date(lastMessage.dateCreated);
+
+      return matchesSearch &&
+        messageDate >= new Date(startDate) &&
+        messageDate <= new Date(endDate);
+    });
+
+    setFilteredCustomers(filteredResults);
+  }, [searchTerm, startDate, endDate, customers]);
+
+
 
   const getData = async () => {
     try {
@@ -215,6 +244,36 @@ function Customers() {
     setOpenSnackbar(false);
   };
 
+  const exportToExcel = () => {
+    if (filteredCustomers.length === 0) {
+      setSnackbarMessage("No hay datos para exportar");
+      setSnackbarSeverity("warning");
+      setOpenSnackbar(true);
+      return;
+    }
+
+    const dataToExport = filteredCustomers.map((customer) => ({
+      Cliente: customer.name,
+      Teléfono: customer.phone,
+      Estado: customer.status,
+      Clasificación: customer.classification,
+      Usuario: customer.userName,
+      "Fecha del Último Mensaje":
+        customer.messages.length > 0
+          ? formatDate(customer.messages[customer.messages.length - 1].dateCreated)
+          : "Sin mensajes",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+
+    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const data = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(data, `Clientes_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
+
   return (
     <DashboardLayout>
       <Box sx={{ width: "100%", display: "flex", flexDirection: "column" }}>
@@ -222,14 +281,43 @@ function Customers() {
           <Typography variant="h4" gutterBottom>
             Clientes
           </Typography>
-          <TextField
-            label="Buscar"
-            variant="outlined"
-            fullWidth
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ mb: 2 }}
-          />
+          <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "center" }}>
+            <TextField
+              label="Buscar"
+              variant="outlined"
+              fullWidth
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              sx={{ maxWidth: "300px" }} // Ajustar ancho del buscador
+            />
+            <TextField
+              label="Fecha Inicial"
+              type="date"
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              sx={{ width: "200px" }}
+            />
+            <TextField
+              label="Fecha Final"
+              type="date"
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              sx={{ width: "200px" }}
+            />
+            {/* Botón para exportar */}
+            <Button
+              variant="contained"
+              color="success"
+              onClick={exportToExcel}
+              startIcon={<DownloadIcon />}
+              sx={{ height: 40 }}
+            ></Button>
+          </Box>
+
           <Box sx={{ height: "88vh", width: "100%" }}>
             <DataGrid
               rows={filteredCustomers}
