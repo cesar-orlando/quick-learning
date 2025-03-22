@@ -72,19 +72,130 @@ function Customers() {
 
 
   const getData = async () => {
-    try {
-      const { data, success } = await customerService.getCustomers();
-      setCustomers(data);
-      setFilteredCustomers(data);
-      setLoading(false);
-      setSnackbarMessage(success ? "Datos cargados correctamente" : "Error al cargar los datos");
-      setSnackbarSeverity(success ? "success" : "error");
-    } catch (error) {
-      console.error(error);
-      setSnackbarMessage("Error al cargar los datos");
-      setSnackbarSeverity("error");
-    } finally {
-      setOpenSnackbar(true);
+    const getPermissions = sessionStorage.getItem("permissions");
+
+    if (getPermissions === "1") {
+      // Caso de permisos "1": Consumir el endpoint `/list` con SSE
+      try {
+        setLoading(true); // Mostrar el estado de carga
+
+        const customers = [];
+        const url = `${process.env.REACT_APP_API_URL}/api/v1/quicklearning/list`;
+
+        const eventSource = new EventSource(url);
+
+        console.log("🌐 Conexión SSE iniciada:", eventSource);
+
+        // Escuchar los datos enviados por el backend
+        eventSource.onmessage = async (event) => {
+          const data = JSON.parse(event.data);
+          console.log("📥 Cliente recibido:", data);
+
+          // 🔹 Obtener información del usuario para cada cliente
+          try {
+            const userResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/user/${data.user}`);
+            const userData = userResponse.data.user;
+
+            // Obtener solo el primer nombre
+            const firstName = userData.name.split(" ")[0];
+
+            // Agregar la información del usuario al cliente
+            const enrichedCustomer = {
+              ...data,
+              userName: firstName || "Desconocido", // Agregar el primer nombre del usuario
+            };
+
+            customers.push(enrichedCustomer);
+            setCustomers([...customers]); // Actualizar el estado con los nuevos datos
+            setFilteredCustomers([...customers]);
+          } catch (error) {
+            console.error(`Error fetching user data for user ID ${data.user}:`, error);
+
+            // Si falla, agregar el cliente con un valor por defecto
+            const fallbackCustomer = {
+              ...data,
+              userName: "Desconocido", // Valor por defecto en caso de error
+            };
+
+            customers.push(fallbackCustomer);
+            setCustomers([...customers]); // Actualizar el estado con los nuevos datos
+            setFilteredCustomers([...customers]);
+          }
+        };
+
+        // Escuchar el evento de finalización
+        eventSource.addEventListener("end", () => {
+          console.log("✅ Conexión SSE finalizada");
+          eventSource.close();
+          setSnackbarMessage("Datos cargados correctamente");
+          setSnackbarSeverity("success");
+          setLoading(false);
+        });
+
+        // Manejar errores
+        eventSource.onerror = (error) => {
+          console.error("❌ Error en la conexión SSE:", error);
+          eventSource.close();
+          setSnackbarMessage("Error al cargar los datos");
+          setSnackbarSeverity("error");
+          setLoading(false);
+        };
+      } catch (error) {
+        console.error("❌ Error al consumir el endpoint SSE:", error);
+        setSnackbarMessage("Error al cargar los datos");
+        setSnackbarSeverity("error");
+        setLoading(false);
+      } finally {
+        setOpenSnackbar(true);
+      }
+    } else {
+      // Caso de otros permisos: Consumir el endpoint `/customers/conversations/:user` con axios
+      try {
+        setLoading(true); // Mostrar el estado de carga
+
+        const { data, success } = await customerService.getCustomers();
+
+        // 🔹 Obtener información del usuario para cada cliente
+        const customersWithUserData = await Promise.all(
+          data.map(async (item) => {
+            try {
+              const userResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/user/${item.user}`);
+              const userData = userResponse.data.user;
+
+              // Obtener solo el primer nombre
+              const firstName = userData.name.split(" ")[0];
+
+              return {
+                ...item,
+                id: item._id, // Agregar `id` basado en `_id`
+                userName: firstName || "Desconocido", // Agregar el primer nombre del usuario
+              };
+            } catch (error) {
+              console.error(`Error fetching user data for user ID ${item.user}:`, error);
+
+              // Si falla, devolver el cliente con un valor por defecto
+              return {
+                ...item,
+                id: item._id, // Agregar `id` basado en `_id`
+                userName: "Desconocido", // Valor por defecto en caso de error
+              };
+            }
+          })
+        );
+
+        console.log("data --->", customersWithUserData);
+        setCustomers(customersWithUserData);
+        setFilteredCustomers(customersWithUserData);
+        setSnackbarMessage(success ? "Datos cargados correctamente" : "Error al cargar los datos");
+        setSnackbarSeverity(success ? "success" : "error");
+      } catch (error) {
+        console.error(error);
+        setSnackbarMessage("Error al cargar los datos");
+        setSnackbarSeverity("error");
+      } finally {
+        setOpenSnackbar(true);
+        setLoading(false);
+      }
     }
   };
 
@@ -326,9 +437,10 @@ function Customers() {
               autoPageSize
               disableColumnMenu
               disableSelectionOnClick
-              loading={loading}
+              // loading={loading}
               onRowClick={handleRowClick}
               rowHeight={38} // Reducir la altura de las filas
+              getRowId={(row) => row._id} // Usar `_id` como identificador único
               sx={{
                 width: "100%",
                 "& .MuiDataGrid-root": { borderRadius: "10px" },
