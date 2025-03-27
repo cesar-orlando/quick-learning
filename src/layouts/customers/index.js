@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Box, Card, Typography, Snackbar, Alert, Drawer, IconButton, TextField, Switch, Button } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import { DataGrid } from "@mui/x-data-grid";
@@ -32,11 +32,17 @@ function Customers() {
     getData();
   }, []);
 
-  useEffect(() => {
-    if (openDrawer && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  useLayoutEffect(() => {
+    if (openDrawer && selectedCustomer?.messages?.length) {
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 150); // <-- tiempo suficiente para que renderice
     }
   }, [openDrawer, selectedCustomer]);
+  
+  
 
   useEffect(() => {
     const filteredResults = customers.filter(customer => {
@@ -45,7 +51,11 @@ function Customers() {
         customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
         customer.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
         customer.classification.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.userName.toLowerCase().includes(searchTerm.toLowerCase());
+        customer.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        // 🔹 Buscar en los mensajes del cliente
+        customer.messages.some(message =>
+          message.body.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
       // Obtener el último mensaje del usuario
       const lastMessage = customer.messages?.length
@@ -69,6 +79,11 @@ function Customers() {
     setFilteredCustomers(filteredResults);
   }, [searchTerm, startDate, endDate, customers]);
 
+  useLayoutEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [selectedCustomer?.messages]);
 
 
   const getData = async () => {
@@ -408,14 +423,13 @@ function Customers() {
                         color: message.direction === "inbound" ? "black" : "white",
                         padding: "8px 12px",
                         borderRadius: "10px",
-                        maxWidth: "75%", // 🔹 No ocupa todo el ancho
-                        wordBreak: "break-word", // 🔹 Ajusta palabras largas
-                        whiteSpace: "pre-wrap", // 🔹 Hace saltos de línea cuando es necesario
-                        display: "inline-block", // 🔹 Ajusta el tamaño al contenido
+                        maxWidth: "75%",
+                        wordBreak: "break-word",
+                        whiteSpace: "pre-wrap",
+                        display: "inline-block",
                         fontSize: "0.9rem",
                       }}
                     >
-
                       {message.direction === "inbound" ? "👤" : "🤖"} {message.body}
                       <br />
                       <strong>{formatDate(message.dateCreated)}</strong>
