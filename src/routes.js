@@ -1,26 +1,18 @@
 
 // Material Dashboard 2 React layouts
 import Dashboard from "layouts/dashboard";
-import Tables from "layouts/tables";
-import Billing from "layouts/billing";
-import Notifications from "layouts/notifications";
-import Profile from "layouts/profile";
 import SignIn from "layouts/authentication/sign-in";
-import SignUp from "layouts/authentication/sign-up";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
-import Companies from "layouts/companies";
 import Promoter from "layouts/promotor";
 import PromoterDetails from "layouts/promotor/PromoterDetails";
-import CompanyDetails from "layouts/companies/companyDetails";
 import Customer from "layouts/customers";
 import CustomerDetails from "layouts/customers/CustomerDetails";
 import CustomerChat from "layouts/customers/customerChat";
-import Promotions from "layouts/promotions";
-import AddPromotion from "layouts/promotions/addPromotion";
 import ChatApp from "layouts/chatApp/chatApp";
 import AddCustomer from "layouts/customers/components/addCustomer";
+import Advisor from "layouts/advisor";
 
 const permissions = sessionStorage.getItem("permissions");
 
@@ -55,19 +47,11 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "Promotores",
-    key: "promoter",
+    name: "Asesores",
+    key: "advisor",
     icon: <Icon fontSize="small">diversity_3</Icon>,
-    route: "/promoter",
-    component: <Promoter />,
-  },
-  {
-    type: "collapse",
-    name: "Promociones",
-    key: "promotions",
-    icon: <Icon fontSize="small">local_offer</Icon>,
-    route: "/promotions",
-    component: <Promotions />,
+    route: "/advisor",
+    component: <Advisor />,
   },
   {
     type: "collapse",
@@ -78,17 +62,8 @@ const routes = [
     component: <ChatApp />,
   },
   {
-    route:"/add-promotion",
-    component: <AddPromotion />
-  },
-  {
     route: "/promoter/:id",
     component: <PromoterDetails />,
-  },
-  {
-    route: "/company/:id",
-    component: <CompanyDetails />,
-
   },
   {
     route: "/customer/:id",

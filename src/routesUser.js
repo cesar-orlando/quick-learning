@@ -9,15 +9,10 @@ import SignUp from "layouts/authentication/sign-up";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
-import Companies from "layouts/companies";
-import Promoter from "layouts/promotor";
 import PromoterDetails from "layouts/promotor/PromoterDetails";
-import CompanyDetails from "layouts/companies/companyDetails";
 import Customer from "layouts/customers";
 import CustomerDetails from "layouts/customers/CustomerDetails";
 import CustomerChat from "layouts/customers/customerChat";
-import Promotions from "layouts/promotions";
-import AddPromotion from "layouts/promotions/addPromotion";
 import ChatApp from "layouts/chatApp/chatApp";
 import AddCustomer from "layouts/customers/components/addCustomer";
 
@@ -53,10 +48,6 @@ const routesUser = [
   {
     route: "/promoter/:id",
     component: <PromoterDetails />,
-  },
-  {
-    route: "/company/:id",
-    component: <CompanyDetails />,
   },
   {
     route: "/customer/:id",
