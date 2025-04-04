@@ -4,69 +4,57 @@ export const customerService = {
   getCustomers,
 };
 
-async function getCustomers() {
+async function getCustomers(page = 1, limit = 500) {
   try {
     const getPermissions = sessionStorage.getItem("permissions");
     const getUser = sessionStorage.getItem("user");
-    let response;
 
-    if (getPermissions === "1") {
-      response = await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/list`);
-    } else {
-      response = await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/quicklearning/customers/conversations/${getUser}`);
-    }
+    const endpoint = getPermissions === "1"
+      ? `${process.env.REACT_APP_API_URL}/api/v1/quicklearning/list?page=${page}&limit=${limit}`
+      : `${process.env.REACT_APP_API_URL}/api/v1/quicklearning/customers/conversations/${getUser}`;
 
-    // 🟢 Función para obtener el emoji de estado
-    const getFlagEmoji = (classification, status) => {
-      if (classification === "Prospecto" && status === "Interesado") return "🟢";
-      if (classification === "Prospecto") return "🟡";
-      if (classification === "Alumno") return "🔵";
-      if (classification === "Urgente") return "🔴";
-      if (["No interesado por precio", "Número equivocado", "Ofrece servicios", "No contesta"].includes(classification)) return "⚪";
-      return "";
-    };
+    const response = await axios.get(endpoint);
 
-    // 🔹 Obtener información del usuario para cada cliente
     const customersWithUserData = await Promise.all(response.data.customers.map(async (item) => {
       try {
         const userResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/v1/user/${item.user}`);
         const userData = userResponse.data.user;
-
-        // Obtener solo el primer nombre
         const firstName = userData.name.split(" ")[0];
 
         return {
           id: item._id,
           name: item.name,
           phone: item.phone,
-          flagEmoji: getFlagEmoji(item.classification, item.status),
           messages: item.messages,
           status: item.status || "Desconocido",
           classification: item.classification || "Sin clasificar",
           ia: item.ia,
           user: item.user,
-          userName: firstName || "Desconocido" // Agregar el primer nombre del usuario
+          userName: firstName
         };
-      } catch (error) {
-        // console.error(`Error fetching user data for user ID ${item.user}:`, error);
+      } catch {
         return {
           id: item._id,
           name: item.name,
           phone: item.phone,
-          flagEmoji: getFlagEmoji(item.classification, item.status),
           messages: item.messages,
           status: item.status || "Desconocido",
           classification: item.classification || "Sin clasificar",
           ia: item.ia,
           user: item.user,
-          userName: "Desconocido" // Valor por defecto en caso de error
+          userName: "Desconocido"
         };
       }
     }));
 
-    return { data: customersWithUserData, loading: false, success: true };
+    return {
+      data: customersWithUserData,
+      total: response.data.total,
+      success: true,
+    };
   } catch (error) {
     console.error(error);
-    return { data: [], loading: false, success: false };
+    return { data: [], total: 0, success: false };
   }
 }
+

@@ -11,6 +11,11 @@ import axios from "axios";
 import withAuth from "middleware/withJWT";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { io } from "socket.io-client";
+
+// Conexión global
+const socket = io(process.env.REACT_APP_API_URL); // ⚠️ Asegúrate que sea el mismo dominio del backend
+
 
 function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -27,10 +32,10 @@ function Customers() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-
   useEffect(() => {
     getData();
   }, []);
+
 
   useLayoutEffect(() => {
     if (openDrawer && selectedCustomer?.messages?.length) {
@@ -41,43 +46,38 @@ function Customers() {
       }, 150); // <-- tiempo suficiente para que renderice
     }
   }, [openDrawer, selectedCustomer]);
-  
-  
+
+
 
   useEffect(() => {
-    const filteredResults = customers.filter(customer => {
-      const matchesSearch =
-        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.classification.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        // 🔹 Buscar en los mensajes del cliente
-        customer.messages.some(message =>
-          message.body.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+    if (!searchTerm && !startDate && !endDate) {
+      // No hay filtros: usar los datos paginados normales
+      getData();
+    } else {
+      // Aplicar búsqueda sobre todos (💡 puedes crear una ruta en el backend con filtros + paginación)
+      // Por ahora solo filtras local si ya los tienes
+      const filteredResults = customers.filter((customer) => {
+        const matchesSearch =
+          customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          customer.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          customer.classification.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          customer.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          customer.messages.some((message) =>
+            message.body.toLowerCase().includes(searchTerm.toLowerCase())
+          );
 
-      // Obtener el último mensaje del usuario
-      const lastMessage = customer.messages?.length
-        ? customer.messages[customer.messages.length - 1]
-        : null;
+        const lastMessage = customer.messages?.[customer.messages.length - 1];
+        if (!startDate || !endDate) return matchesSearch;
+        if (!lastMessage) return false;
 
-      // Si no hay fechas, solo filtra por búsqueda
-      if (!startDate || !endDate) {
-        return matchesSearch;
-      }
+        const msgDate = new Date(lastMessage.dateCreated);
+        return matchesSearch && msgDate >= new Date(startDate) && msgDate <= new Date(endDate);
+      });
 
-      if (!lastMessage) return false; // Si no hay mensajes, no se muestra
-
-      const messageDate = new Date(lastMessage.dateCreated);
-
-      return matchesSearch &&
-        messageDate >= new Date(startDate) &&
-        messageDate <= new Date(endDate);
-    });
-
-    setFilteredCustomers(filteredResults);
-  }, [searchTerm, startDate, endDate, customers]);
+      setCustomers(filteredResults); // ⚠️ aquí ya no usamos `filteredCustomers`
+    }
+  }, [searchTerm, startDate, endDate]);
 
   useLayoutEffect(() => {
     if (messagesEndRef.current) {
@@ -86,22 +86,25 @@ function Customers() {
   }, [selectedCustomer?.messages]);
 
 
-  const getData = async () => {
+  const getData = async (pageToLoad, size) => {
     try {
-      const { data, success } = await customerService.getCustomers();
+      const { data, total, success } = await customerService.getCustomers(pageToLoad + 1, size);
+      if (!success) throw new Error("Error al cargar los datos");
+
       setCustomers(data);
       setFilteredCustomers(data);
-      setLoading(false);
-      setSnackbarMessage(success ? "Datos cargados correctamente" : "Error al cargar los datos");
-      setSnackbarSeverity(success ? "success" : "error");
+      setSnackbarMessage("Datos cargados correctamente");
+      setSnackbarSeverity("success");
     } catch (error) {
       console.error(error);
       setSnackbarMessage("Error al cargar los datos");
       setSnackbarSeverity("error");
     } finally {
+      setLoading(false);
       setOpenSnackbar(true);
     }
   };
+
 
   const handleRowClick = (params) => {
     setSelectedCustomer(params.row);
@@ -288,6 +291,64 @@ function Customers() {
     saveAs(data, `Clientes_${new Date().toISOString().split("T")[0]}.xlsx`);
   };
 
+  useEffect(() => {
+    socket.on("new_message", (data) => {
+      console.log("💬 Mensaje nuevo recibido por socket:", data);
+
+      setCustomers((prevCustomers) => {
+        const updatedCustomers = [...prevCustomers];
+        const existing = updatedCustomers.find(c => c.phone === data.phone);
+
+        if (existing) {
+          existing.messages.push({
+            direction: data.direction,
+            body: data.body,
+            dateCreated: data.timestamp,
+          });
+
+          // Reordenar lista por último mensaje si quieres (opcional)
+          updatedCustomers.sort((a, b) => {
+            const dateA = new Date(a.messages[a.messages.length - 1]?.dateCreated || 0);
+            const dateB = new Date(b.messages[b.messages.length - 1]?.dateCreated || 0);
+            return dateB - dateA;
+          });
+
+          return [...updatedCustomers];
+        } else {
+          // 🆕 Cliente nuevo que no existía aún (puedes volver a llamar getData o crearlo vacío con el mensaje)
+          console.log("🆕 Cliente nuevo, volviendo a cargar lista...");
+          getData(); // ⚠️ Esto hace una petición completa pero solo si no existe
+          return prevCustomers;
+        }
+      });
+
+      // También actualizar el chat abierto si coincide
+      setSelectedCustomer((prev) => {
+        if (!prev || prev.phone !== data.phone) return prev;
+
+        const alreadyExists = prev.messages.some(
+          m => m.body === data.body && m.direction === data.direction && new Date(m.dateCreated).toISOString() === new Date(data.timestamp).toISOString()
+        );
+
+        if (alreadyExists) return prev;
+
+        return {
+          ...prev,
+          messages: [...prev.messages, {
+            direction: data.direction,
+            body: data.body,
+            dateCreated: data.timestamp,
+          }],
+        };
+      });
+    });
+
+    return () => {
+      socket.off("new_message");
+    };
+  }, []);
+
+  //https://www.jetdan9878.online/api/v2/whastapp/message
 
   return (
     <DashboardLayout>
@@ -335,20 +396,18 @@ function Customers() {
 
           <Box sx={{ height: "88vh", width: "100%" }}>
             <DataGrid
-              rows={filteredCustomers}
+              rows={customers}
               columns={columns}
-              pageSize={50} // Aumentar el número de filas por página
-              autoPageSize
-              disableColumnMenu
-              disableSelectionOnClick
               loading={loading}
               onRowClick={handleRowClick}
-              rowHeight={38} // Reducir la altura de las filas
+              disableColumnMenu
+              disableSelectionOnClick
+              rowHeight={38}
               sx={{
                 width: "100%",
                 "& .MuiDataGrid-root": { borderRadius: "10px" },
                 "& .MuiDataGrid-columnHeaders": { backgroundColor: "#f5f5f5", fontWeight: "bold" },
-                fontSize: "0.8rem", // Reducir el tamaño de la fuente
+                fontSize: "0.8rem",
                 fontWeight: "bold",
               }}
             />
