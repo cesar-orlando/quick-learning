@@ -29,12 +29,25 @@ function Customers() {
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const messagesEndRef = useRef(null);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  
+  const [startDate, setStartDate] = useState(firstDay.toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(lastDay.toISOString().split("T")[0]);
+  
 
   useEffect(() => {
-    getData();
-  }, []);
+    if (startDate && endDate) {
+      if (new Date(endDate) < new Date(startDate)) {
+        setSnackbarMessage("La fecha final no puede ser menor a la inicial");
+        setSnackbarSeverity("warning");
+        setOpenSnackbar(true);
+        return;
+      }
+      getData(0, 500, startDate, endDate);
+    }
+  }, [startDate, endDate]);
 
 
   useLayoutEffect(() => {
@@ -86,11 +99,18 @@ function Customers() {
   }, [selectedCustomer?.messages]);
 
 
-  const getData = async (pageToLoad, size) => {
+  const getData = async (pageToLoad = 0, size = 500, startDate, endDate) => {
     try {
-      const { data, total, success } = await customerService.getCustomers(pageToLoad + 1, size);
+      const { data, total, success } = await customerService.getCustomers(
+        pageToLoad + 1,
+        size,
+        startDate,
+        endDate
+      );
       if (!success) throw new Error("Error al cargar los datos");
 
+      console.log("data --->", data);
+  
       setCustomers(data);
       setFilteredCustomers(data);
       setSnackbarMessage("Datos cargados correctamente");
@@ -104,6 +124,7 @@ function Customers() {
       setOpenSnackbar(true);
     }
   };
+  
 
 
   const handleRowClick = (params) => {
