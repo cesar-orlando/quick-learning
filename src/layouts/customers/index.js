@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Box, Card, Typography, Snackbar, Alert, Drawer, IconButton, TextField, Switch, Button } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, GridOverlay } from "@mui/x-data-grid";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CloseIcon from "@mui/icons-material/Close";
 import DashboardLayout from "components/LayoutContainers/DashboardLayout";
@@ -12,6 +12,19 @@ import withAuth from "middleware/withJWT";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { io } from "socket.io-client";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import { Badge } from "@mui/material";
+
+
+/** @jsxImportSource @emotion/react */
+import { keyframes } from '@emotion/react';
+
+const pulse = keyframes`
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+`;
+
 
 // Conexión global
 const socket = io(process.env.REACT_APP_API_URL); // ⚠️ Asegúrate que sea el mismo dominio del backend
@@ -28,14 +41,15 @@ function Customers() {
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [newMessages, setNewMessages] = useState({});
   const messagesEndRef = useRef(null);
   const today = new Date();
   const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
   const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  
+
   const [startDate, setStartDate] = useState(firstDay.toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(lastDay.toISOString().split("T")[0]);
-  
+
 
   useEffect(() => {
     if (startDate && endDate) {
@@ -110,7 +124,7 @@ function Customers() {
       if (!success) throw new Error("Error al cargar los datos");
 
       console.log("data --->", data);
-  
+
       setCustomers(data);
       setFilteredCustomers(data);
       setSnackbarMessage("Datos cargados correctamente");
@@ -124,12 +138,18 @@ function Customers() {
       setOpenSnackbar(true);
     }
   };
-  
+
 
 
   const handleRowClick = (params) => {
     setSelectedCustomer(params.row);
     setOpenDrawer(true);
+
+    setNewMessages((prev) => {
+      const copy = { ...prev };
+      delete copy[params.row.phone]; // o params.row.id
+      return copy;
+    });
   };
 
   const handleCloseDrawer = () => {
@@ -257,7 +277,37 @@ function Customers() {
   };
 
   const columns = [
-    { field: "name", headerName: "Cliente", flex: 1, minWidth: 250 },
+    {
+      field: "name",
+      headerName: "Cliente",
+      width: 230,
+      renderCell: (params) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {params.value}
+
+          {newMessages[params.row.phone] && (
+            <Badge
+              badgeContent={1}
+              color="error"
+              sx={{
+                "& .MuiBadge-badge": {
+                  fontSize: "0.65rem",
+                  width: 10,
+                  height: 10,
+                  top: 2,
+                  right: 2,
+                  animation: `${pulse} 1.5s infinite`,
+                  boxShadow: "0 0 6px rgba(0,0,0,0.2)",
+                },
+              }}
+            >
+              <NotificationsIcon sx={{ width: 18, height:18, color: "#f44336" }} />
+            </Badge>
+          )}
+        </Box>
+      )
+    }
+    ,
     { field: "phone", headerName: "Teléfono", flex: 1, minWidth: 150 },
     { field: "status", headerName: "Estado", flex: 1, minWidth: 150 },
     { field: "classification", headerName: "Clasificación", flex: 1, minWidth: 150 },
@@ -362,6 +412,12 @@ function Customers() {
           }],
         };
       });
+
+      setNewMessages(prev => ({
+        ...prev,
+        [data.phone]: true, // o usa data._id si lo tienes
+      }));
+
     });
 
     return () => {
@@ -369,7 +425,42 @@ function Customers() {
     };
   }, []);
 
+  useEffect(() => {
+    socket.on("update_customer", (updatedCustomer) => {
+      console.log("📡 Cliente actualizado vía socket:", updatedCustomer);
+
+      setCustomers((prev) =>
+        prev.map((c) =>
+          c._id?.toString() === updatedCustomer._id?.toString()
+            ? { ...c, ...updatedCustomer }
+            : c
+        )
+      );
+
+      setSelectedCustomer((prev) =>
+        prev && prev._id?.toString() === updatedCustomer._id?.toString()
+          ? { ...prev, ...updatedCustomer }
+          : prev
+      );
+    });
+
+    return () => {
+      socket.off("update_customer");
+    };
+  }, []);
+
+
+
   //https://www.jetdan9878.online/api/v2/whastapp/message
+
+  // Componente personalizado para mostrar cuando no hay datos
+  const CustomNoRowsOverlay = () => (
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
+        <Typography variant="h6" color="textSecondary">
+          No hay datos disponibles
+        </Typography>
+      </Box>
+  );
 
   return (
     <DashboardLayout>
@@ -416,6 +507,9 @@ function Customers() {
           </Box>
 
           <Box sx={{ height: "88vh", width: "100%" }}>
+          {customers.length === 0 ? (
+            <CustomNoRowsOverlay />
+          ) : (
             <DataGrid
               rows={customers}
               columns={columns}
@@ -432,6 +526,8 @@ function Customers() {
                 fontWeight: "bold",
               }}
             />
+            )
+            }
           </Box>
         </Card>
 

@@ -13,6 +13,7 @@ import CustomerChat from "layouts/customers/customerChat";
 import ChatApp from "layouts/chatApp/chatApp";
 import AddCustomer from "layouts/customers/components/addCustomer";
 import Advisor from "layouts/advisor";
+import Sedes from "layouts/sedes";
 
 const permissions = sessionStorage.getItem("permissions");
 
@@ -60,6 +61,14 @@ const routes = [
     icon: <Icon fontSize="small">chat</Icon>,
     route: "/chat",
     component: <ChatApp />,
+  },
+  {
+    type: "collapse",
+    name: "Sedes",
+    key: "sede",
+    icon: <Icon fontSize="small">chat</Icon>,
+    route: "/sede",
+    component: <Sedes />,
   },
   {
     route: "/promoter/:id",
