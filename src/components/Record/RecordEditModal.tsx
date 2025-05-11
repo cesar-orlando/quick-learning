@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import FileDropzone from "../FileDropzone";
 import CloseIcon from "@mui/icons-material/Close";
 import { NewButton } from "../ui/NewButton";
+import api from "../../api/axios"; // Asegúrate de importar tu cliente API
 
 interface Field {
   key: string;
@@ -51,10 +52,25 @@ export const RecordEditModal = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [localRecord, setLocalRecord] = useState<Record | null>(record);
+  const [users, setUsers] = useState<{ _id: string; name: string }[]>([]);
 
   useEffect(() => {
     setLocalRecord(record);
   }, [record]);
+
+  // Obtener usuarios al montar el componente
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await api.get("/user"); // Ajusta la ruta según tu API
+        setUsers(response.data.map((user: any) => ({ _id: user._id, name: user.name })));
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleChange = (key: string, value: any) => {
     const updated = editingFields.map((f) => (f.key === key ? { ...f, value } : f));
@@ -115,6 +131,32 @@ export const RecordEditModal = ({
       <Divider sx={{ mb: 2 }} />
 
       {editingFields.map((field) => {
+        if (field.key === "asesor") {
+          const parsedValue = field.value ? JSON.parse(field.value) : null; // Parsear el valor si existe
+          return (
+            <Box key={field.key} sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>{field.label}</Typography>
+              <Select
+                fullWidth
+                value={parsedValue?._id || ""} // Mostrar el _id como valor seleccionado
+                onChange={(e) => {
+                  const selectedUser = users.find((user: any) => user._id === e.target.value);
+                  if (selectedUser) {
+                    handleChange(field.key, JSON.stringify({ name: selectedUser.name, _id: selectedUser._id }));
+                  }
+                }}
+                size="small"
+              >
+                {users.map((user: any) => (
+                  <MenuItem key={user._id} value={user._id}>
+                    {user.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+          );
+        }
+
         if (field.type === "select") {
           return (
             <Box key={field.key} sx={{ mb: 2 }}>
@@ -127,7 +169,7 @@ export const RecordEditModal = ({
               >
                 {field.options?.map((option) => (
                   <MenuItem key={option} value={option}>
-                    {option}
+                    {option === "true" ? "Activo" : option === "false" ? "Inactivo" : option}
                   </MenuItem>
                 ))}
               </Select>

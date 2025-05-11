@@ -155,14 +155,35 @@ const RecordSettings = ({ open, slug, fields, setFields, fetchFields, onClose }:
           {fields.map((field) => (
             <Box key={field.key} display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Box display="flex" alignItems="center">
-                <input type="checkbox" checked={field.visible} onChange={() => toggleVisibility(field.key)} />
-                <Typography sx={{ ml: 1 }}>{field.label}</Typography>
+                <input
+                  type="checkbox"
+                  checked={field.visible}
+                  onChange={() => toggleVisibility(field.key)}
+                  disabled={field.key === "asesor"} // Deshabilitar checkbox para "asesor"
+                />
+                <Typography
+                  sx={{
+                    ml: 1,
+                    color: field.key === "asesor" ? "gray" : "inherit", // Texto en gris para "asesor"
+                  }}
+                >
+                  {field.label}
+                </Typography>
               </Box>
               <Box display="flex" alignItems="center" gap={1}>
-                <IconButton size="small" onClick={() => setEditField(field)}>
+                <IconButton
+                  size="small"
+                  onClick={() => setEditField(field)}
+                  disabled={field.key === "asesor"} // Deshabilitar edición para "asesor"
+                >
                   <EditIcon fontSize="small" />
                 </IconButton>
-                <IconButton size="small" color="error" onClick={() => handleDeleteField(field.key, field.label)}>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => handleDeleteField(field.key, field.label)}
+                  disabled={field.key === "asesor"} // Deshabilitar eliminación para "asesor"
+                >
                   <DeleteIcon />
                 </IconButton>
               </Box>

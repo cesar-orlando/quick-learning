@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  IconButton,
-} from "@mui/material";
+import { Box, Table, TableBody, TableCell, TableHead, TableRow, IconButton } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LoaderBackdrop from "../ui/LoaderBackdrop";
@@ -121,22 +113,22 @@ const UsersTable = ({
                 {fields.map(
                   (field) =>
                     field.visible !== false && (
-                      <TableCell key={field.key}>{user[field.key]}</TableCell>
+                      <TableCell key={field.key}>
+                        {user[field.key] == "sales"
+                          ? "Asesor"
+                          : user[field.key] == "viewer"
+                          ? "Visualizar"
+                          : user[field.key] == "admin"
+                          ? "Administrador"
+                          : user[field.key]}
+                      </TableCell>
                     )
                 )}
                 <TableCell align="right">
-                  <IconButton
-                    color="primary"
-                    onClick={() => onEdit(user)}
-                    aria-label="Editar usuario"
-                  >
+                  <IconButton color="primary" onClick={() => onEdit(user)} aria-label="Editar usuario">
                     <EditIcon />
                   </IconButton>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDeleteUser(user._id)}
-                    aria-label="Eliminar usuario"
-                  >
+                  <IconButton color="error" onClick={() => handleDeleteUser(user._id)} aria-label="Eliminar usuario">
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>

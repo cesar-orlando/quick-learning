@@ -1,7 +1,7 @@
 import { Box, Drawer, IconButton, Typography, FormControl, InputLabel, Select, MenuItem, TextField, FormHelperText, CircularProgress, Backdrop, useTheme, useMediaQuery } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import { NewButton } from "../ui/NewButton";
 import api from "../../api/axios";
@@ -19,6 +19,7 @@ export const NewRecordModal = ({ open, onClose, slug, fields, onSuccess }: Props
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const schema = buildDynamicSchema(fields);
+  const [users, setUsers] = useState<{ _id: string; name: string }[]>([]);
 
   const {
     control,
@@ -36,6 +37,20 @@ export const NewRecordModal = ({ open, onClose, slug, fields, onSuccess }: Props
   useEffect(() => {
     reset();
   }, [fields, open]);
+
+  // Obtener usuarios al montar el componente
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await api.get("/user"); // Ajusta la ruta según tu API
+        setUsers(response.data.map((user: any) => ({ _id: user._id, name: user.name })));
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const onSubmitCreate = async (data: any) => {
     try {
@@ -106,6 +121,34 @@ export const NewRecordModal = ({ open, onClose, slug, fields, onSuccess }: Props
             name={field.key}
             control={control}
             render={({ field: controllerField }) => {
+              if (field.key === "asesor") {
+                const parsedValue = controllerField.value ? JSON.parse(controllerField.value) : null; // Parsear el valor si existe
+                return (
+                  <FormControl fullWidth error={!!errors[field.key]}>
+                    <InputLabel>{field.label}</InputLabel>
+                    <Select
+                      value={parsedValue?._id || ""}
+                      onChange={(e) => {
+                        const selectedUser = users.find((user) => user._id === e.target.value);
+                        if (selectedUser) {
+                          controllerField.onChange(
+                            JSON.stringify({ name: selectedUser.name, _id: selectedUser._id })
+                          );
+                        }
+                      }}
+                      label={field.label}
+                    >
+                      {users.map((user) => (
+                        <MenuItem key={user._id} value={user._id}>
+                          {user.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <FormHelperText>{String(errors[field.key]?.message || "")}</FormHelperText>
+                  </FormControl>
+                );
+              }
+
               if (field.type === "select") {
                 return (
                   <FormControl fullWidth error={!!errors[field.key]}>

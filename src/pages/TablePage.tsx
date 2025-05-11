@@ -13,6 +13,7 @@ import RecordEditModal from "../components/Record/RecordEditModal";
 import RecordSettings from "../components/Record/RecordSettings";
 import FilterPanel from "../components/Record/FilterPanel";
 import LoaderBackdrop from "../components/ui/LoaderBackdrop";
+import ProspectDrawer from "../components/Record/ProspectDrawer";
 
 function TablePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -30,6 +31,8 @@ function TablePage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [dateRange, setDateRange] = useState<{ [key: string]: { start: string; end: string } }>({});
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -60,7 +63,7 @@ function TablePage() {
           type: field.type,
           options: field.options,
           visible: field.visible ?? true,
-          format: field.format
+          format: field.format,
         }));
         setFields(dynamicFields);
       } else {
@@ -88,16 +91,43 @@ function TablePage() {
     setOpenEditModal(true);
   };
 
+  const handleOpenDrawer = (record: any) => {
+    setSelectedRecord(record);
+    setEditingFields(
+      record.customFields.map((field: any) => ({
+        key: field.key,
+        label: field.label,
+        type: field.type,
+        options: field.options,
+        visible: field.visible,
+        value: field.value,
+      }))
+    );
+    setDrawerOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+    setSelectedRecord(null);
+  };
+
   const saveEditedRecord = async (updatedRecord: any) => {
+    setLoading(true);
+    console.log("updatedRecord", updatedRecord );
     try {
+      console.log("entro en el try");
       await api.put(`/records/update/${updatedRecord._id}`, {
         customFields: updatedRecord.customFields,
       });
+      setDrawerOpen(false);
       setOpenEditModal(false);
       fetchRecords();
+      console.log("todo bien");
     } catch (error) {
       console.error("Error al editar el registro:", error);
       alert("Error al editar el registro");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -488,6 +518,7 @@ function TablePage() {
             setSortField={setSortField}
             sortOrder={sortOrder}
             setSortOrder={setSortOrder}
+            onOpenDrawer={handleOpenDrawer} // Pasar la función al RecordTable
           />
         </Box>
       )}
@@ -517,6 +548,15 @@ function TablePage() {
         setFields={setFields}
         fetchFields={fetchRecords}
         onClose={() => setOpenSettings(false)}
+      />
+
+      <ProspectDrawer
+        open={drawerOpen}
+        onClose={handleCloseDrawer}
+        record={selectedRecord}
+        editingFields={editingFields}
+        setEditingFields={setEditingFields}
+        onSave={saveEditedRecord}
       />
     </Box>
   );

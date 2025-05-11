@@ -32,7 +32,7 @@ const schema = yup.object().shape({
   name: yup.string().required("El nombre es obligatorio"),
   email: yup.string().email("Correo inválido").required("El correo es obligatorio"),
   password: yup.string().min(6, "La contraseña debe tener al menos 6 caracteres").required("La contraseña es obligatoria"),
-  role: yup.string().oneOf(["admin", "Ventas", "Visualizar"], "Rol inválido").required("El rol es obligatorio"),
+  role: yup.string().oneOf(["admin", "sales", "viewer"], "Rol inválido").required("El rol es obligatorio"),
 });
 
 export const NewUserModal = ({ open, onClose, onSuccess }: Props) => {
@@ -50,7 +50,7 @@ export const NewUserModal = ({ open, onClose, onSuccess }: Props) => {
       name: "",
       email: "",
       password: "",
-      role: "Visualizar",
+      role: "viewer",
     },
   });
 
@@ -151,8 +151,8 @@ export const NewUserModal = ({ open, onClose, onSuccess }: Props) => {
               <InputLabel>Rol</InputLabel>
               <Select {...field} label="Rol">
                 <MenuItem value="admin">Admin</MenuItem>
-                <MenuItem value="sales">Sales</MenuItem>
-                <MenuItem value="viewer">Viewer</MenuItem>
+                <MenuItem value="sales">Asesor</MenuItem>
+                <MenuItem value="viewer">Visualizar</MenuItem>
               </Select>
               <FormHelperText>{String(errors.role?.message || "")}</FormHelperText>
             </FormControl>
