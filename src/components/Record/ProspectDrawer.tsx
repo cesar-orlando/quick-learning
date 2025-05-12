@@ -45,6 +45,7 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<{ _id: string; name: string }[]>([]);
+  const [sending, setSending] = useState(false);
   const [messageText, setMessageText] = useState("");
   const chatContainerRef = useRef<HTMLDivElement | null>(null); // Ref para el contenedor del chat
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -127,12 +128,16 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
       message: messageText.trim(),
     };
 
+    setSending(true);
+
     try {
       await api.post("/whatsapp/send-message", payload);
       setMessageText(""); // Limpia el campo
       fetchChat(phoneField.value); // Refresca el chat
     } catch (error) {
       console.error("Error al enviar mensaje:", error);
+    } finally{
+      setSending(false);
     }
   };
 
@@ -424,6 +429,7 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
             placeholder="Escribe un mensaje..."
             fullWidth
             multiline
+            disabled={sending}
             rows={1}
             maxRows={4}
             value={messageText}
@@ -456,7 +462,7 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
             }}
           />
 
-          <NewButton label="Enviar" onClick={handleSendMessage} />
+          <NewButton label="Enviar" disabled={sending || !messageText.trim()} onClick={handleSendMessage} />
         </Box>
       </Box>
     </Drawer>

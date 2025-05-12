@@ -6,11 +6,13 @@ interface NewButtonProps {
   label: string;
   fullWidth?: boolean;
   icon?: React.ReactNode;
+  disabled?: boolean;
 }
 
-export const NewButton = ({ onClick, label, fullWidth = false, icon }: NewButtonProps) => {
+export const NewButton = ({ onClick, label, fullWidth = false, icon, disabled = false }: NewButtonProps) => {
   return (
     <Button
+      disabled={disabled}
       onClick={onClick}
       variant="contained"
       fullWidth={fullWidth}
