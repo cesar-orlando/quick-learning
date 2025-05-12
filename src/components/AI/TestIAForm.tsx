@@ -1,8 +1,7 @@
-import { Box, Button, MenuItem, TextField, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useIAConfig } from "../../hooks/useIAConfig";
 import { IAConfig } from "../../types/ia-config";
-import { useTables } from "../../hooks/useTables";
 import { ChatModal } from "./ChatModal";
 import LoaderBackdrop from "../ui/LoaderBackdrop";
 import IASettingsPanel from "./IASettingsPanel";
@@ -13,7 +12,6 @@ export const TestIAForm = ({ clientId }: { clientId: string }) => {
   const [localConfig, setLocalConfig] = useState<IAConfig | null>(null);
   const [canTest, setCanTest] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const { tables: allTables } = useTables();
 
   console.log("loading", loading);
 
@@ -37,11 +35,6 @@ export const TestIAForm = ({ clientId }: { clientId: string }) => {
       setLocalConfig({ ...config, customPrompt: defaultPrompt || "" });
     }
   }, [config, isNew]);
-
-  const handleChange = <T extends keyof IAConfig>(field: T, value: IAConfig[T]) => {
-    if (!localConfig) return;
-    setLocalConfig({ ...localConfig, [field]: value });
-  };
 
   const handleSave = async () => {
     if (!localConfig) return;

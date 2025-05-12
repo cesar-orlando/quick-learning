@@ -55,7 +55,6 @@ export const ChatModal = ({ open, onClose, onSendMessage }: ChatModalProps) => {
   }
 
   function removeMarkdownLinks(content: string): string {
-    const clean = typeof content === "string" ? content.replace(/\[.*?\]\((.*?)\)/g, "") : "";
 
     return content
       .replace(/\[.*?\]\((.*?)\)/g, "")
