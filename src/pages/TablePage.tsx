@@ -37,6 +37,9 @@ function TablePage() {
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user?.role === "admin";
+
   useEffect(() => {
     if (showSearch && searchRef.current) {
       searchRef.current.focus();
@@ -50,7 +53,16 @@ function TablePage() {
 
   const fetchRecords = async () => {
     try {
-      const res = await api.get(`/records/${slug}`);
+      let res;
+      if (isAdmin) {
+        // Si es administrador, usar el endpoint general
+        res = await api.get(`/records/${slug}`);
+      } else {
+        // Si no es administrador, usar el endpoint específico del asesor
+        const asesorId = user._id; // Obtener el ID del usuario desde localStorage
+        res = await api.get(`/whatsapp/prospect/${asesorId}`);
+      }
+
       const recordsFetched = res.data;
       setRecords(recordsFetched);
 
@@ -113,7 +125,7 @@ function TablePage() {
 
   const saveEditedRecord = async (updatedRecord: any) => {
     setLoading(true);
-    console.log("updatedRecord", updatedRecord );
+    console.log("updatedRecord", updatedRecord);
     try {
       console.log("entro en el try");
       await api.put(`/records/update/${updatedRecord._id}`, {
@@ -322,22 +334,23 @@ function TablePage() {
           >
             {showAdvancedFilters ? "Ocultar filtros" : "Filtros"}
           </Button>
-
-          <Button
-            onClick={() => setOpenSettings(true)}
-            startIcon={<SettingsIcon sx={{ fontSize: 18 }} />}
-            variant="outlined"
-            size="small"
-            sx={{
-              fontSize: "13px",
-              borderRadius: "999px",
-              padding: "4px 12px",
-              textTransform: "none",
-              minHeight: "30px",
-            }}
-          >
-            Configurar Campos
-          </Button>
+          {isAdmin && (
+            <Button
+              onClick={() => setOpenSettings(true)}
+              startIcon={<SettingsIcon sx={{ fontSize: 18 }} />}
+              variant="outlined"
+              size="small"
+              sx={{
+                fontSize: "13px",
+                borderRadius: "999px",
+                padding: "4px 12px",
+                textTransform: "none",
+                minHeight: "30px",
+              }}
+            >
+              Configurar Campos
+            </Button>
+          )}
         </Box>
       </Box>
 
@@ -531,7 +544,6 @@ function TablePage() {
         fields={fields}
         onSuccess={fetchRecords}
       />
-
       <RecordEditModal
         open={openEditModal}
         record={editingRecord}

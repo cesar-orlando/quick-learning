@@ -53,6 +53,8 @@ export const RecordEditModal = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [localRecord, setLocalRecord] = useState<Record | null>(record);
   const [users, setUsers] = useState<{ _id: string; name: string }[]>([]);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     setLocalRecord(record);
@@ -136,23 +138,29 @@ export const RecordEditModal = ({
           return (
             <Box key={field.key} sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>{field.label}</Typography>
-              <Select
-                fullWidth
-                value={parsedValue?._id || ""} // Mostrar el _id como valor seleccionado
-                onChange={(e) => {
-                  const selectedUser = users.find((user: any) => user._id === e.target.value);
-                  if (selectedUser) {
-                    handleChange(field.key, JSON.stringify({ name: selectedUser.name, _id: selectedUser._id }));
-                  }
-                }}
-                size="small"
-              >
-                {users.map((user: any) => (
-                  <MenuItem key={user._id} value={user._id}>
-                    {user.name}
-                  </MenuItem>
-                ))}
-              </Select>
+              {isAdmin ? (
+                <Select
+                  fullWidth
+                  value={parsedValue?._id || ""} // Mostrar el _id como valor seleccionado
+                  onChange={(e) => {
+                    const selectedUser = users.find((user: any) => user._id === e.target.value);
+                    if (selectedUser) {
+                      handleChange(field.key, JSON.stringify({ name: selectedUser.name, _id: selectedUser._id }));
+                    }
+                  }}
+                  size="small"
+                >
+                  {users.map((user: any) => (
+                    <MenuItem key={user._id} value={user._id}>
+                      {user.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              ) : (
+                <Typography variant="body1" sx={{ mt: 1 }}>
+                  {parsedValue?.name || "No asignado"}
+                </Typography>
+              )}
             </Box>
           );
         }

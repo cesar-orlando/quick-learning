@@ -48,6 +48,9 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const [openEditModal, setOpenEditModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user?.role === "admin";
+
   const handleEditTable = (table: any) => {
     console.log("Editar tabla:", table);
     setOpenEditModal(true);
@@ -86,33 +89,35 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       <Toolbar />
       <Box sx={{ overflow: "auto", padding: 2 }}>
         {/* 🔥 Botón para nueva tabla */}
-        <NewButton label="Nueva Tabla" onClick={() => setOpenNewTable(true)} />
+        {isAdmin && <NewButton label="Nueva Tabla" onClick={() => setOpenNewTable(true)} />}
         <List>
           {/* IA */}
-          <ListItem disablePadding>
-            <ListItemButton
-              onClick={() => {
-                navigate("/ia");
-                if (isMobile) onClose();
-              }}
-            >
-              <ListItemIcon>
-                <Box
-                  component="span"
-                  sx={{
-                    fontSize: "20px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "24px",
-                  }}
-                >
-                  🤖
-                </Box>
-              </ListItemIcon>
-              <ListItemText primary="IA" />
-            </ListItemButton>
-          </ListItem>
+          {isAdmin && (
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  navigate("/ia");
+                  if (isMobile) onClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Box
+                    component="span"
+                    sx={{
+                      fontSize: "20px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "24px",
+                    }}
+                  >
+                    🤖
+                  </Box>
+                </ListItemIcon>
+                <ListItemText primary="IA" />
+              </ListItemButton>
+            </ListItem>
+          )}
 
           {/* Tablas dinámicas */}
           {tables.map((table) => (
@@ -169,30 +174,32 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
             </ListItem>
           ))}
           {/* Usuarios */}
-          <ListItem disablePadding>
-            <ListItemButton
-              onClick={() => {
-                navigate("/usuarios");
-                if (isMobile) onClose();
-              }}
-            >
-              <ListItemIcon>
-                <Box
-                  component="span"
-                  sx={{
-                    fontSize: "20px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "24px",
-                  }}
-                >
-                  👤
-                </Box>
-              </ListItemIcon>
-              <ListItemText primary="Usuarios" />
-            </ListItemButton>
-          </ListItem>
+          {isAdmin && (
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  navigate("/usuarios");
+                  if (isMobile) onClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Box
+                    component="span"
+                    sx={{
+                      fontSize: "20px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "24px",
+                    }}
+                  >
+                    👤
+                  </Box>
+                </ListItemIcon>
+                <ListItemText primary="Usuarios" />
+              </ListItemButton>
+            </ListItem>
+          )}
         </List>
         {/* 🔥 Modal de nueva tabla */}
         <NewTableModal open={openNewTable} onClose={() => setOpenNewTable(false)} onSuccess={refetch} />

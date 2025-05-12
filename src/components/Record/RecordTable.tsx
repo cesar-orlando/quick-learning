@@ -263,35 +263,37 @@ export const RecordTable = ({
                         >
                           {isCurrency
                             ? formatCurrency(value)
-                            : `${value === true ? "Activo" : value === false ? "Inactivo" : value}`}
+                            : `${value == "true" ? "Activo" : value == "false" ? "Inactivo" : value}`}
                         </Box>
                       </Tooltip>
-                      <Button
-                        className="open-button"
-                        onClick={() => onOpenDrawer(record)}
-                        startIcon={<KeyboardArrowRightIcon sx={{ width: 12, height: 12 }} />} // Ícono más pequeño
-                        sx={{
-                          height: 18, // Botón más pequeño
-                          fontSize: "10px", // Texto más pequeño
-                          textTransform: "none", // Respetar las minúsculas
-                          position: "absolute",
-                          bottom: 4, // Mover hacia abajo
-                          right: 4, // Mover hacia la derecha
-                          opacity: 0, // Opaco por defecto
-                          transition: "opacity 0.2s ease-in-out",
-                          backgroundColor: "#F3F4F6",
-                          color: "#374151",
-                          padding: "0 4px", // Reducir el padding para hacerlo más corto
-                          gap: "1px", // Reducir el espacio entre el ícono y el texto
-                          minWidth: "auto", // Eliminar el ancho mínimo predeterminado
-                          "&:hover": {
-                            opacity: 1, // Más visible al pasar el cursor
-                            backgroundColor: "#E5E7EB",
-                          },
-                        }}
-                      >
-                        Abrir
-                      </Button>
+                      {record.tableSlug === "prospectos" && ( // Condición para mostrar el botón solo si el slug es "prospectos"
+                        <Button
+                          className="open-button"
+                          onClick={() => onOpenDrawer(record)}
+                          startIcon={<KeyboardArrowRightIcon sx={{ width: 12, height: 12 }} />} // Ícono más pequeño
+                          sx={{
+                            height: 18, // Botón más pequeño
+                            fontSize: "10px", // Texto más pequeño
+                            textTransform: "none", // Respetar las minúsculas
+                            position: "absolute",
+                            bottom: 4, // Mover hacia abajo
+                            right: 4, // Mover hacia la derecha
+                            opacity: 0, // Opaco por defecto
+                            transition: "opacity 0.2s ease-in-out",
+                            backgroundColor: "#F3F4F6",
+                            color: "#374151",
+                            padding: "0 4px", // Reducir el padding para hacerlo más corto
+                            gap: "1px", // Reducir el espacio entre el ícono y el texto
+                            minWidth: "auto", // Eliminar el ancho mínimo predeterminado
+                            "&:hover": {
+                              opacity: 1, // Más visible al pasar el cursor
+                              backgroundColor: "#E5E7EB",
+                            },
+                          }}
+                        >
+                          Abrir
+                        </Button>
+                      )}
                     </TableCell>
                   );
                 })}

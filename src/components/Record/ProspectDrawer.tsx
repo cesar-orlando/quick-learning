@@ -45,7 +45,10 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<{ _id: string; name: string }[]>([]);
+  const [messageText, setMessageText] = useState("");
   const chatContainerRef = useRef<HTMLDivElement | null>(null); // Ref para el contenedor del chat
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user?.role === "admin";
 
   const nameField = record?.customFields?.find((field: any) => field.key === "name");
 
@@ -114,6 +117,25 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
     await onSave(updatedRecord);
   };
 
+  const handleSendMessage = async () => {
+    const phoneField = record?.customFields?.find((f: any) => f.key === "phone");
+
+    if (!phoneField?.value || !messageText.trim()) return;
+
+    const payload = {
+      phone: phoneField.value,
+      message: messageText.trim(),
+    };
+
+    try {
+      await api.post("/whatsapp/send-message", payload);
+      setMessageText(""); // Limpia el campo
+      fetchChat(phoneField.value); // Refresca el chat
+    } catch (error) {
+      console.error("Error al enviar mensaje:", error);
+    }
+  };
+
   if (loading) {
     return <LoaderBackdrop open={loading} />;
   }
@@ -149,66 +171,74 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
                 <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
                   {field.label}
                 </Typography>
-                <Select
-                  fullWidth
-                  value={parsedValue?._id || ""} // Mostrar el _id como valor seleccionado
-                  onChange={(e) => {
-                    const selectedUser = users.find((user) => user._id === e.target.value);
-                    if (selectedUser) {
-                      handleChange(field.key, JSON.stringify({ name: selectedUser.name, _id: selectedUser._id }));
-                    }
-                  }}
-                  size="small"
-                  displayEmpty
-                  input={
-                    <OutlinedInput
-                      notched={false}
-                      sx={{
-                        borderRadius: 3,
-                        backgroundColor: "#fff",
-                        boxShadow: "0px 1px 4px rgba(0,0,0,0.08)",
-                        "& fieldset": {
-                          borderColor: "transparent",
-                        },
-                        "&:hover fieldset": {
-                          borderColor: "#D0D0D0",
-                        },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#7B61FF",
-                          boxShadow: "0 0 0 2px rgba(123, 97, 255, 0.2)",
-                        },
-                        paddingRight: "32px", // espacio para la flechita
-                      }}
-                    />
-                  }
-                >
-                  {users.map((user) => (
-                    <MenuItem key={user._id} value={user._id}
-                    sx={{
-                      borderRadius: 2,
-                      paddingY: 1,
-                      paddingX: 2,
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      "&:hover": {
-                        backgroundColor: "#F0ECFF",
-                      },
-                      "&.Mui-selected": {
-                        backgroundColor: "#E5DFFF",
-                        fontWeight: 600,
-                        color: "#7B61FF",
-                        "&:hover": {
-                          backgroundColor: "#E0DAFF",
-                        },
-                      },
+                {isAdmin ? (
+                  <Select
+                    fullWidth
+                    value={parsedValue?._id || ""} // Mostrar el _id como valor seleccionado
+                    onChange={(e) => {
+                      const selectedUser = users.find((user) => user._id === e.target.value);
+                      if (selectedUser) {
+                        handleChange(field.key, JSON.stringify({ name: selectedUser.name, _id: selectedUser._id }));
+                      }
                     }}
-                    >
-                      {user.name}
-                    </MenuItem>
-                  ))}
-                </Select>
+                    size="small"
+                    displayEmpty
+                    input={
+                      <OutlinedInput
+                        notched={false}
+                        sx={{
+                          borderRadius: 3,
+                          backgroundColor: "#fff",
+                          boxShadow: "0px 1px 4px rgba(0,0,0,0.08)",
+                          "& fieldset": {
+                            borderColor: "transparent",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: "#D0D0D0",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: "#7B61FF",
+                            boxShadow: "0 0 0 2px rgba(123, 97, 255, 0.2)",
+                          },
+                          paddingRight: "32px", // espacio para la flechita
+                        }}
+                      />
+                    }
+                  >
+                    {users.map((user) => (
+                      <MenuItem
+                        key={user._id}
+                        value={user._id}
+                        sx={{
+                          borderRadius: 2,
+                          paddingY: 1,
+                          paddingX: 2,
+                          fontSize: "14px",
+                          fontWeight: 500,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          "&:hover": {
+                            backgroundColor: "#F0ECFF",
+                          },
+                          "&.Mui-selected": {
+                            backgroundColor: "#E5DFFF",
+                            fontWeight: 600,
+                            color: "#7B61FF",
+                            "&:hover": {
+                              backgroundColor: "#E0DAFF",
+                            },
+                          },
+                        }}
+                      >
+                        {user.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                ) : (
+                  <Typography variant="body1" sx={{ mt: 1 }}>
+                    {parsedValue?.name || "No asignado"}
+                  </Typography>
+                )}
               </Box>
             );
           }
@@ -396,6 +426,14 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
             multiline
             rows={1}
             maxRows={4}
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 3,
@@ -413,11 +451,12 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
                 },
               },
               "& textarea": {
-                padding: "10px 14px",
+                padding: "5px 7px",
               },
             }}
           />
-          <NewButton label="Enviar" onClick={() => {}} />
+
+          <NewButton label="Enviar" onClick={handleSendMessage} />
         </Box>
       </Box>
     </Drawer>

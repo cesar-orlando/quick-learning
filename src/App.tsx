@@ -8,6 +8,9 @@ import Users from "./pages/Users";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function App() {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user?.role === "admin";
+
   return (
     <Routes>
       {/* Página pública */}
@@ -21,10 +24,17 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/clientes" element={<Clientes />} />
-        <Route path="/ia" element={<AIPage />} />
+        {isAdmin ? (
+          <>
+            <Route path="/clientes" element={<Clientes />} />
+            <Route path="/ia" element={<AIPage />} />
+            <Route path="/:slug" element={<TablePage />} />
+            <Route path="/usuarios" element={<Users />} />
+          </>
+        ) : 
         <Route path="/:slug" element={<TablePage />} />
-        <Route path="/usuarios" element={<Users />} />
+
+        }
       </Route>
 
       {/* Catch-all redirige a login */}
