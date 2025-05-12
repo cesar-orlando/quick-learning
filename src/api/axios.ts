@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://sandbox-api-quick-learning.onrender.com/api",
+  baseURL: "https://api.quick-learning.virtualvoices.com.mx/api",
   // baseURL: "http://localhost:3001/api",
   headers: {
     "Content-Type": "application/json",
