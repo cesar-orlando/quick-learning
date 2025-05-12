@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   const login = (token: string, user: any) => {
+    console.log("user --->", user);
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
     setIsAuthenticated(true);
