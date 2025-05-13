@@ -63,7 +63,7 @@ function TablePage() {
         res = await api.get(`/whatsapp/prospect/${asesorId}`);
       }
 
-      const recordsFetched = res.data;
+      const recordsFetched = res.data.records;
       setRecords(recordsFetched);
 
       // 🔥 Automáticamente armar fields desde el primer registro
