@@ -108,11 +108,12 @@ const UsersTable = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user) => (
-              <TableRow key={user._id}>
-                {fields.map(
-                  (field) =>
-                    field.visible !== false && (
+            {users.map((user) => {
+              return (
+                <TableRow key={user._id}>
+                  {fields.map((field) => {
+                    console.log("field --->", field);
+                    return (
                       <TableCell key={field.key}>
                         {user[field.key] == "sales"
                           ? "Asesor"
@@ -120,20 +121,25 @@ const UsersTable = ({
                           ? "Visualizar"
                           : user[field.key] == "admin"
                           ? "Administrador"
-                          : user[field.key]}
+                          : `${user[field.key]}` == "true"
+                          ? "🟢 Activo"
+                          : `${user[field.key]}` == "false"
+                          ? "🔴 Inactivo"
+                          : `${user[field.key]}`}
                       </TableCell>
-                    )
-                )}
-                <TableCell align="right">
-                  <IconButton color="primary" onClick={() => onEdit(user)} aria-label="Editar usuario">
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton color="error" onClick={() => handleDeleteUser(user._id)} aria-label="Eliminar usuario">
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
+                    );
+                  })}
+                  <TableCell align="right">
+                    <IconButton color="primary" onClick={() => onEdit(user)} aria-label="Editar usuario">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton color="error" onClick={() => handleDeleteUser(user._id)} aria-label="Eliminar usuario">
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </Box>

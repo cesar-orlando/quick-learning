@@ -15,6 +15,7 @@ function Users() {
     { key: "name", label: "Nombre", type: "text", visible: true },
     { key: "email", label: "Correo Electrónico", type: "text", visible: true },
     { key: "role", label: "Rol", type: "text", visible: true },
+    { key: "status", label: "Estado", type: "select", options: ["true", "false"], visible: true },
   ];
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");

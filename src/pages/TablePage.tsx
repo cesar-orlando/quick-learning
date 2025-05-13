@@ -52,6 +52,7 @@ function TablePage() {
   }, [slug]);
 
   const fetchRecords = async () => {
+    setLoading(true);
     try {
       let res;
       if (isAdmin) {

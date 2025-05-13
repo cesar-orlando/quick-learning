@@ -51,7 +51,7 @@ export const RecordTable = ({
   setSortField,
   sortOrder,
   setSortOrder,
-  onOpenDrawer
+  onOpenDrawer,
 }: RecordTableProps) => {
   const [modalFiles, setModalFiles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -192,7 +192,16 @@ export const RecordTable = ({
 
                   if (field.key === "asesor" && value) {
                     // Parsear el valor si está en formato JSON
-                    const parsedValue = typeof value === "string" ? JSON.parse(value) : value;
+                    let parsedValue = value;
+                    if (typeof value === "string") {
+                      try {
+                        parsedValue = JSON.parse(value);
+                      } catch (err) {
+                        console.warn("❌ Error al hacer JSON.parse en el campo asesor:", value);
+                        parsedValue = { name: value }; // fallback
+                      }
+                    }
+
                     const name = parsedValue?.name || "-";
                     const truncatedName = name.split(" ").slice(0, 2).join(" "); // Obtener las dos primeras palabras
 
