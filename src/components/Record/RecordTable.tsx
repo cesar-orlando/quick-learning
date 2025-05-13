@@ -15,12 +15,14 @@ import {
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import DownloadIcon from "@mui/icons-material/Download";
 
 import { useState } from "react";
 import api from "../../api/axios";
 import { formatCurrency } from "../../utils/formatCurrency";
 import ActionMenu from "../ui/ActionMenu";
 import LoaderBackdrop from "../ui/LoaderBackdrop";
+import { exportRecordsToExcel } from "../../utils/exportRecordsToExcel";
 
 interface Field {
   key: string;
@@ -79,6 +81,25 @@ export const RecordTable = ({
   return (
     <>
       <LoaderBackdrop open={loading} text="Guardando cambios..." />
+      <Box display="flex" justifyContent="flex-end" mb={1}>
+        <Button
+          onClick={() => exportRecordsToExcel(records, fields, "tabla-prospectos.xlsx")}
+          sx={{
+            minWidth: "auto",
+            padding: "6px",
+            borderRadius: "12px",
+            backgroundColor: "#22C55E", // Verde bonito
+            color: "#fff",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+            "&:hover": {
+              backgroundColor: "#16A34A", // Verde más oscuro al pasar el mouse
+            },
+          }}
+        >
+          <DownloadIcon sx={{ fontSize: 20 }} />
+        </Button>
+      </Box>
+
       <Box sx={{ overflowX: "auto", width: "100%" }}>
         <Table
           sx={{
@@ -233,21 +254,21 @@ export const RecordTable = ({
                         align="left"
                         sx={{ maxWidth: 250, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
                       >
-                          <Box
-                            sx={{
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {new Date(value).toLocaleDateString("es-MX", {
-                              year: "numeric",
-                              month: "2-digit",
-                              day: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </Box>
+                        <Box
+                          sx={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {new Date(value).toLocaleDateString("es-MX", {
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </Box>
                       </TableCell>
                     );
                   }
