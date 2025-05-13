@@ -226,6 +226,32 @@ export const RecordTable = ({
                     );
                   }
 
+                  if (field.key === "lastMessageTime" && value) {
+                    return (
+                      <TableCell
+                        key={field.key}
+                        align="left"
+                        sx={{ maxWidth: 250, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                      >
+                          <Box
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {new Date(value).toLocaleDateString("es-MX", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </Box>
+                      </TableCell>
+                    );
+                  }
+
                   if (field.type === "file" && value && Array.isArray(value)) {
                     return (
                       <TableCell
