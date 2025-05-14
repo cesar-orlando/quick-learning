@@ -1,13 +1,4 @@
-import {
-  Box,
-  Drawer,
-  IconButton,
-  Typography,
-  TextField,
-  Button,
-  CircularProgress,
-  Backdrop,
-} from "@mui/material";
+import { Box, Drawer, IconButton, Typography, TextField, Button, CircularProgress, Backdrop } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import CloseIcon from "@mui/icons-material/Close";
 import { useEffect, useState } from "react";
@@ -26,6 +17,7 @@ export const EditUserModal = ({ open, onClose, user, onSuccess }: Props) => {
       name: user?.name || "",
       email: user?.email || "",
       role: user?.role || "viewer",
+      status: user?.status || "true",
     },
   });
 
@@ -101,44 +93,36 @@ export const EditUserModal = ({ open, onClose, user, onSuccess }: Props) => {
         <Controller
           name="name"
           control={control}
-          render={({ field }) => (
-            <TextField {...field} fullWidth label="Nombre" />
-          )}
+          render={({ field }) => <TextField {...field} fullWidth label="Nombre" />}
         />
 
         <Controller
           name="email"
           control={control}
-          render={({ field }) => (
-            <TextField {...field} fullWidth label="Correo Electrónico" />
-          )}
+          render={({ field }) => <TextField {...field} fullWidth label="Correo Electrónico" />}
         />
 
         <Controller
           name="role"
           control={control}
+          render={({ field }) => <TextField {...field} fullWidth label="Rol" />}
+        />
+        <Controller
+          name="status"
+          control={control}
           render={({ field }) => (
-            <TextField {...field} fullWidth label="Rol" />
+            <TextField {...field} select fullWidth label="Activo" SelectProps={{ native: true }}>
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </TextField>
           )}
         />
 
-        <Button
-          variant="contained"
-          color="primary"
-          type="submit"
-          fullWidth
-          disabled={loading}
-        >
+        <Button variant="contained" color="primary" type="submit" fullWidth disabled={loading}>
           Guardar Cambios
         </Button>
 
-        <Button
-          variant="outlined"
-          color="secondary"
-          onClick={handleResetPassword}
-          fullWidth
-          disabled={loading}
-        >
+        <Button variant="outlined" color="secondary" onClick={handleResetPassword} fullWidth disabled={loading}>
           Restablecer Contraseña
         </Button>
       </Box>
