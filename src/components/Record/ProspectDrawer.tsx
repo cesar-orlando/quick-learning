@@ -44,7 +44,7 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
 
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<{ _id: string; name: string }[]>([]);
+  const [users, setUsers] = useState<{ _id: string; name: string; status: any }[]>([]);
   const [sending, setSending] = useState(false);
   const [messageText, setMessageText] = useState("");
   const chatContainerRef = useRef<HTMLDivElement | null>(null); // Ref para el contenedor del chat
@@ -88,7 +88,7 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
     const fetchUsers = async () => {
       try {
         const response = await api.get("/user"); // Ajusta la ruta según tu API
-        setUsers(response.data.map((user: any) => ({ _id: user._id, name: user.name })));
+        setUsers(response.data.map((user: any) => ({ _id: user._id, name: user.name, status: user.status })));
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -211,6 +211,7 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
                     }
                   >
                     {users.map((user) => (
+                      user.status.toString() == "true" && (
                       <MenuItem
                         key={user._id}
                         value={user._id}
@@ -237,6 +238,7 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
                       >
                         {user.name}
                       </MenuItem>
+                      )
                     ))}
                   </Select>
                 ) : (
