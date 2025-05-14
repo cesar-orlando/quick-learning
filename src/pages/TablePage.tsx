@@ -2,6 +2,12 @@ import { useParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/axios";
 import { Box, Typography, Button, Chip, Stack, TextField, Drawer, Divider } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { es } from "date-fns/locale";
+import { MenuItem, Select } from "@mui/material";
+
 import Lottie from "lottie-react";
 import TuneIcon from "@mui/icons-material/Tune";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -33,6 +39,15 @@ function TablePage() {
   const [dateRange, setDateRange] = useState<{ [key: string]: { start: string; end: string } }>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const initialDateField = useMemo(() => {
+    if (dateRange.lastMessageTime?.start || dateRange.lastMessageTime?.end) return "lastMessageTime";
+    if (dateRange.createdAt?.start || dateRange.createdAt?.end) return "createdAt";
+    return "createdAt";
+  }, [dateRange]);
+  
+  const [dateRangeField, setDateRangeField] = useState<"createdAt" | "lastMessageTime">(initialDateField);
+  
+  const [tempDateRange, setTempDateRange] = useState<[Date | null, Date | null]>([null, null]);
 
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -50,6 +65,19 @@ function TablePage() {
     if (!slug) return;
     fetchRecords();
   }, [slug]);
+  
+  useEffect(() => {
+    const fieldRange = dateRange[dateRangeField];
+    if (fieldRange?.start || fieldRange?.end) {
+      setTempDateRange([
+        fieldRange.start ? new Date(fieldRange.start) : null,
+        fieldRange.end ? new Date(fieldRange.end) : null,
+      ]);
+    } else {
+      setTempDateRange([null, null]);
+    }
+  }, [dateRangeField, showAdvancedFilters]);
+  
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -162,9 +190,18 @@ function TablePage() {
       });
 
       const matchDates = Object.entries(dateRange).every(([key, range]) => {
-        const field = record.customFields?.find((f: any) => f.key === key);
-        if (!field?.value) return true;
-        const date = new Date(field.value);
+        let value = "";
+
+        if (key === "createdAt") {
+          value = record.createdAt;
+        } else {
+          console.log("key", key);
+          value = record.customFields?.find((f: any) => f.key === key)?.value;
+        }
+
+        if (!value) return true;
+
+        const date = new Date(value);
         const start = range.start ? new Date(range.start) : null;
         const end = range.end ? new Date(range.end) : null;
 
@@ -446,6 +483,99 @@ function TablePage() {
               </Box>
               <Divider sx={{ mb: 2 }} />
             </Box>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+              <Box
+                sx={{
+                  backgroundColor: "#F9FAFB",
+                  padding: 2,
+                  borderRadius: 3,
+                  mb: 3,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#4B5563", mb: 1 }}>
+                  📅 Filtrar por rango de fechas
+                </Typography>
+
+                <Box display="flex" flexDirection="column" gap={2}>
+                  {/* Campo a usar */}
+                  <Select
+                    fullWidth
+                    size="small"
+                    value={dateRangeField}
+                    onChange={(e) => {
+                      setDateRangeField(e.target.value as "createdAt" | "lastMessageTime");
+                      setTempDateRange([null, null]);
+                      setDateRange((prev) => {
+                        const updated = { ...prev };
+                        delete updated.createdAt;
+                        delete updated.lastMessageTime;
+                        return updated;
+                      });
+                    }}
+                    sx={{
+                      borderRadius: "999px",
+                      backgroundColor: "#fff",
+                    }}
+                  >
+                    <MenuItem value="createdAt">Fecha de creación</MenuItem>
+                    <MenuItem value="lastMessageTime">Hora del último mensaje</MenuItem>
+                  </Select>
+
+                  <DatePicker
+                    label="Inicio"
+                    value={tempDateRange[0]}
+                    onChange={(date) => {
+                      const [, end] = tempDateRange;
+                      setTempDateRange([date, end]);
+                      setDateRange((prev) => ({
+                        ...prev,
+                        [dateRangeField]: {
+                          start: date ? date.toISOString() : "",
+                          end: end ? end.toISOString() : "",
+                        },
+                      }));
+                    }}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        sx: {
+                          backgroundColor: "#fff",
+                          borderRadius: "999px",
+                        },
+                      },
+                    }}
+                  />
+
+                  <DatePicker
+                    label="Fin"
+                    value={tempDateRange[1]}
+                    onChange={(date) => {
+                      const [start] = tempDateRange;
+                      setTempDateRange([start, date]);
+                      setDateRange((prev) => ({
+                        ...prev,
+                        [dateRangeField]: {
+                          start: start ? start.toISOString() : "",
+                          end: date ? date.toISOString() : "",
+                        },
+                      }));
+                    }}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        sx: {
+                          backgroundColor: "#fff",
+                          borderRadius: "999px",
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+              </Box>
+            </LocalizationProvider>
 
             <FilterPanel
               fields={fields}
@@ -489,12 +619,28 @@ function TablePage() {
                 )}
 
                 {/* Rango de fechas */}
-                {Object.entries(dateRange).map(([key, range]) =>
-                  range.start || range.end ? (
+                {Object.entries(dateRange).map(([key, range]) => {
+                  if (!range.start && !range.end) return null;
+
+                  const fieldLabel =
+                    key === "createdAt"
+                      ? "📆 Fecha de creación"
+                      : key === "lastMessageTime"
+                      ? "⏰ Último mensaje"
+                      : key;
+
+                  const format = (iso: string) =>
+                    new Date(iso).toLocaleDateString("es-MX", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    });
+
+                  return (
                     <Chip
                       key={key}
-                      label={`${fields.find((f) => f.key === key)?.label || key}: ${range.start || "..."} → ${
-                        range.end || "..."
+                      label={`${fieldLabel}: ${range.start ? format(range.start) : "..."} → ${
+                        range.end ? format(range.end) : "..."
                       }`}
                       onDelete={() =>
                         setDateRange((prev) => {
@@ -506,8 +652,8 @@ function TablePage() {
                       color="info"
                       variant="outlined"
                     />
-                  ) : null
-                )}
+                  );
+                })}
 
                 {/* Botón para limpiar todo */}
                 <Button

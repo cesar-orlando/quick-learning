@@ -77,11 +77,12 @@ export const RecordTable = ({
       setLoading(false);
     }
   };
+  const totalRecords = records.length;
 
   return (
     <>
       <LoaderBackdrop open={loading} text="Guardando cambios..." />
-      <Box display="flex" justifyContent="flex-end" mb={1}>
+      <Box display="flex" justifyContent="flex-end" alignItems="center" mb={1} px={1}>
         <Button
           onClick={() => exportRecordsToExcel(records, fields, "tabla-prospectos.xlsx")}
           sx={{
@@ -99,7 +100,11 @@ export const RecordTable = ({
           <DownloadIcon sx={{ fontSize: 20 }} />
         </Button>
       </Box>
-
+      <Box display="flex" justifyContent="flex-end" alignItems="center" mb={1} px={1}>
+        <Typography variant="body2" sx={{ fontWeight: "bold", color: "#1E293B" }}>
+          Total: {totalRecords}
+        </Typography>
+      </Box>
       <Box sx={{ overflowX: "auto", width: "100%" }}>
         <Table
           sx={{
@@ -319,7 +324,7 @@ export const RecordTable = ({
                         >
                           {isCurrency
                             ? formatCurrency(value)
-                            : `${value == "true" ? "Activo" : value == "false" ? "Inactivo" : value}`}
+                            : `${value.toString() == "true" ? "Activo" : value.toString() == "false" ? "Inactivo" : value}`}
                         </Box>
                       </Tooltip>
                       {record.tableSlug === "prospectos" && ( // Condición para mostrar el botón solo si el slug es "prospectos"
