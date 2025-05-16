@@ -105,8 +105,14 @@ export const EditUserModal = ({ open, onClose, user, onSuccess }: Props) => {
         <Controller
           name="role"
           control={control}
-          render={({ field }) => <TextField {...field} fullWidth label="Rol" />}
-        />
+          render={({ field }) =>( <TextField {...field} select fullWidth label="Rol" SelectProps={{ native: true }}>
+            <option value="admin">Administrador</option>
+            <option value="editor">Editor</option>
+            <option value="viewer">Espectador</option>
+          </TextField>
+            )}
+          />
+        
         <Controller
           name="status"
           control={control}
