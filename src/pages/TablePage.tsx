@@ -1,17 +1,31 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import api from "../api/axios";
-import { Box, Typography, Button, Chip, Stack, TextField, Drawer, Divider } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Button,
+  Chip,
+  Stack,
+  TextField,
+  Drawer,
+  Divider,
+  Slide,
+  SnackbarContent,
+  IconButton,
+} from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { es } from "date-fns/locale";
 import { MenuItem, Select } from "@mui/material";
+import { motion } from "framer-motion";
 
 import Lottie from "lottie-react";
 import TuneIcon from "@mui/icons-material/Tune";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SearchIcon from "@mui/icons-material/Search";
+import CloseIcon from "@mui/icons-material/Close";
 import emptyAnimation from "../assets/empty.json";
 import { NewRecordModal } from "../components/Record/NewRecordModal";
 import { RecordTable } from "../components/Record/RecordTable";
@@ -20,6 +34,17 @@ import RecordSettings from "../components/Record/RecordSettings";
 import FilterPanel from "../components/Record/FilterPanel";
 import LoaderBackdrop from "../components/ui/LoaderBackdrop";
 import ProspectDrawer from "../components/Record/ProspectDrawer";
+import { io } from "socket.io-client";
+import Snackbar from "@mui/material/Snackbar";
+
+type SnackbarNotification = {
+  type: "nuevo_cliente" | "nuevo_mensaje";
+  text: string;
+  recordId?: string;
+  phone?: string;
+};
+
+const socket = io("https://api.quick-learning.virtualvoices.com.mx");
 
 function TablePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -39,14 +64,15 @@ function TablePage() {
   const [dateRange, setDateRange] = useState<{ [key: string]: { start: string; end: string } }>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+
   const initialDateField = useMemo(() => {
     if (dateRange.lastMessageTime?.start || dateRange.lastMessageTime?.end) return "lastMessageTime";
     if (dateRange.createdAt?.start || dateRange.createdAt?.end) return "createdAt";
     return "createdAt";
   }, [dateRange]);
-  
+
   const [dateRangeField, setDateRangeField] = useState<"createdAt" | "lastMessageTime">(initialDateField);
-  
+
   const [tempDateRange, setTempDateRange] = useState<[Date | null, Date | null]>([null, null]);
 
   const [showSearch, setShowSearch] = useState(false);
@@ -54,6 +80,60 @@ function TablePage() {
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin = user?.role === "admin";
+
+  const [snackbarQueue, setSnackbarQueue] = useState<SnackbarNotification[]>([]);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState<SnackbarNotification | null>(null);
+
+  // Mostrar siguiente mensaje de la cola
+  const processQueue = useCallback(() => {
+    setSnackbarQueue((queue) => {
+      if (queue.length > 0) {
+        setSnackbarMsg(queue[0]);
+        setSnackbarOpen(true);
+        return queue.slice(1);
+      }
+      return queue;
+    });
+  }, []);
+
+  useEffect(() => {
+    socket.on("nuevo_cliente", (data) => {
+      setSnackbarQueue((queue) => [
+        ...queue,
+        {
+          type: "nuevo_cliente",
+          text: `¡Nuevo cliente registrado: ${data.cliente.name}!`,
+          recordId: data.cliente.record?._id,
+          phone: data.cliente.phone,
+        },
+      ]);
+    });
+
+    socket.on("nuevo_mensaje", (data) => {
+      setSnackbarQueue((queue) => [
+        ...queue,
+        {
+          type: "nuevo_mensaje",
+          text: `💬 ${data.name}: ${data.body}`,
+          recordId: data.record?._id,
+          phone: data.phone,
+        },
+      ]);
+    });
+
+    return () => {
+      socket.off("nuevo_cliente");
+      socket.off("nuevo_mensaje");
+    };
+  }, []);
+
+  // Cuando cambia la cola o se cierra el snackbar, muestra el siguiente
+  useEffect(() => {
+    if (!snackbarOpen && snackbarQueue.length > 0) {
+      processQueue();
+    }
+  }, [snackbarQueue, snackbarOpen, processQueue]);
 
   useEffect(() => {
     if (showSearch && searchRef.current) {
@@ -65,7 +145,7 @@ function TablePage() {
     if (!slug) return;
     fetchRecords();
   }, [slug]);
-  
+
   useEffect(() => {
     const fieldRange = dateRange[dateRangeField];
     if (fieldRange?.start || fieldRange?.end) {
@@ -77,7 +157,18 @@ function TablePage() {
       setTempDateRange([null, null]);
     }
   }, [dateRangeField, showAdvancedFilters]);
-  
+
+  useEffect(() => {
+    // Mostrar en consola cuando se conecta el socket
+    socket.on("connect", () => {
+      console.log("✅ Conectado a Socket.IO con id:", socket.id);
+    });
+
+    // Limpieza al desmontar
+    return () => {
+      socket.off("connect");
+    };
+  }, []);
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -281,7 +372,6 @@ function TablePage() {
           >
             {slug}
           </Typography>
-
           {/* Botones: izquierda (+Nuevo + 🔍) */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
             {/* + Nuevo */}
@@ -717,6 +807,80 @@ function TablePage() {
         setEditingFields={setEditingFields}
         onSave={saveEditedRecord}
       />
+      <Snackbar
+        open={snackbarOpen}
+        onClose={(_, reason) => {
+          setSnackbarOpen(false);
+          if (reason !== "clickaway") processQueue();
+        }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        TransitionComponent={(props) => <Slide {...props} direction="left" />}
+        sx={{ zIndex: 1400 }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          <SnackbarContent
+            sx={{
+              backgroundColor: "#F9F5FF",
+              color: "#4C1D95",
+              border: "1px solid #E0D7FA",
+              boxShadow: "0px 4px 8px rgba(123, 97, 255, 0.08), 0 1px 3px rgba(0,0,0,0.04)",
+              px: 2,
+              py: 1.5,
+              borderRadius: 2,
+              maxWidth: 320,
+              cursor: "pointer",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                backgroundColor: "#F3E8FF",
+                boxShadow: "0px 6px 14px rgba(123, 97, 255, 0.15)",
+              },
+            }}
+            onClick={() => {
+              if (!snackbarMsg) return;
+              let matchedRecord = null;
+              if (snackbarMsg.recordId) {
+                matchedRecord = records.find((r) => r._id === snackbarMsg.recordId);
+              } else if (snackbarMsg.phone) {
+                matchedRecord = records.find((r) =>
+                  r.customFields?.some((f: any) => f.key === "phone" && f.value === snackbarMsg.phone)
+                );
+              }
+              if (matchedRecord) {
+                handleOpenDrawer(matchedRecord);
+              }
+              setSnackbarOpen(false);
+            }}
+            message={
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography fontWeight={700} fontSize="0.95rem">
+                    🔔 {snackbarMsg?.text}
+                  </Typography>
+                  <Typography variant="caption" sx={{ opacity: 0.8, color: "#6B21A8" }}>
+                    Haz clic para abrir la conversación
+                  </Typography>
+                </Box>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Evita que se dispare el onClick del SnackbarContent
+                    setSnackbarOpen(false);
+                    processQueue();
+                  }}
+                  sx={{ ml: 1, color: "#6B21A8" }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            }
+          />
+        </motion.div>
+      </Snackbar>
     </Box>
   );
 }
