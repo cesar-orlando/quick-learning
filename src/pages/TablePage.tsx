@@ -99,34 +99,46 @@ function TablePage() {
 
   useEffect(() => {
     socket.on("nuevo_cliente", (data) => {
-      setSnackbarQueue((queue) => [
-        ...queue,
-        {
-          type: "nuevo_cliente",
-          text: `¡Nuevo cliente registrado: ${data.cliente.name}!`,
-          recordId: data.cliente.record?._id,
-          phone: data.cliente.phone,
-        },
-      ]);
+      // Si es admin, ve todos. Si no, solo si el asesorId coincide.
+      if (
+        isAdmin ||
+        (data.cliente?.asesorId && data.cliente.asesorId === user.id)
+      ) {
+        setSnackbarQueue((queue) => [
+          ...queue,
+          {
+            type: "nuevo_cliente",
+            text: `¡Nuevo cliente registrado: ${data.cliente.name}!`,
+            recordId: data.cliente.record?._id,
+            phone: data.cliente.phone,
+          },
+        ]);
+      }
     });
 
     socket.on("nuevo_mensaje", (data) => {
-      setSnackbarQueue((queue) => [
-        ...queue,
-        {
-          type: "nuevo_mensaje",
-          text: `💬 ${data.name}: ${data.body}`,
-          recordId: data.record?._id,
-          phone: data.phone,
-        },
-      ]);
+      // Si es admin, ve todos. Si no, solo si el asesorId coincide.
+      if (
+        isAdmin ||
+        (data.asesorId && data.asesorId === user.id)
+      ) {
+        setSnackbarQueue((queue) => [
+          ...queue,
+          {
+            type: "nuevo_mensaje",
+            text: `💬 ${data.name}: ${data.body}`,
+            recordId: data.record?._id,
+            phone: data.phone,
+          },
+        ]);
+      }
     });
 
     return () => {
       socket.off("nuevo_cliente");
       socket.off("nuevo_mensaje");
     };
-  }, []);
+  }, [isAdmin, user.id]);
 
   // Cuando cambia la cola o se cierra el snackbar, muestra el siguiente
   useEffect(() => {
