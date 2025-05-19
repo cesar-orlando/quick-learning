@@ -215,7 +215,7 @@ function TablePage() {
       } else {
         // Si no es administrador, usar el endpoint específico del asesor
         const asesorId = user.id; // Obtener el ID del usuario desde localStorage
-        res = await api.get(`/whatsapp/prospect/${asesorId}`);
+        res = await api.get(`/whatsapp/${slug}/${asesorId}`);
       }
 
       const recordsFetched = res.data.records;

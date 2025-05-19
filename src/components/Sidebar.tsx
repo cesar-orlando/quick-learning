@@ -120,59 +120,61 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           )}
 
           {/* Tablas dinámicas */}
-          {tables.map((table) => (
-            <ListItem key={table._id} disablePadding>
-              <ListItemButton
-                onClick={() => {
-                  navigate(`/${table.slug}`);
-                  if (isMobile) onClose();
-                }}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                {/* Parte izquierda: Icono + Nombre */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {tables
+            .filter((table) => isAdmin || table.slug !== "sedes") // Solo admin ve "sedes"
+            .map((table) => (
+              <ListItem key={table._id} disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    navigate(`/${table.slug}`);
+                    if (isMobile) onClose();
+                  }}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  {/* Parte izquierda: Icono + Nombre */}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box
+                      component="span"
+                      sx={{
+                        fontSize: "20px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "24px",
+                      }}
+                    >
+                      {table.icon || <PeopleIcon />}
+                    </Box>
+                    <Typography sx={{ fontSize: "15px", fontWeight: 500 }}>{table.name}</Typography>
+                  </Box>
+
+                  {/* Parte derecha: Botón "..." */}
                   <Box
                     component="span"
                     sx={{
                       fontSize: "20px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "24px",
+                      cursor: "pointer",
+                      opacity: 0.6,
+                      transition: "opacity 0.2s",
+                      "&:hover": {
+                        opacity: 1,
+                      },
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Evitar que haga navigate
+                      setAnchorEl(e.currentTarget);
+                      setEditingTable(table);
                     }}
                   >
-                    {table.icon || <PeopleIcon />}
+                    ⋯
                   </Box>
-                  <Typography sx={{ fontSize: "15px", fontWeight: 500 }}>{table.name}</Typography>
-                </Box>
-
-                {/* Parte derecha: Botón "..." */}
-                <Box
-                  component="span"
-                  sx={{
-                    fontSize: "20px",
-                    cursor: "pointer",
-                    opacity: 0.6,
-                    transition: "opacity 0.2s",
-                    "&:hover": {
-                      opacity: 1,
-                    },
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation(); // Evitar que haga navigate
-                    setAnchorEl(e.currentTarget);
-                    setEditingTable(table);
-                  }}
-                >
-                  ⋯
-                </Box>
-              </ListItemButton>
-            </ListItem>
-          ))}
+                </ListItemButton>
+              </ListItem>
+            ))}
           {/* Usuarios */}
           {isAdmin && (
             <ListItem disablePadding>
