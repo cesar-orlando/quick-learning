@@ -99,10 +99,21 @@ function TablePage() {
 
   useEffect(() => {
     socket.on("nuevo_cliente", (data) => {
-      // Si es admin, ve todos. Si no, solo si el asesorId coincide.
+      // Buscar el campo asesor en customFields del cliente
+      const asesorField = data.cliente?.customFields?.find((f: any) => f.key === "asesor");
+      let asesorId = null;
+      if (asesorField && asesorField.value) {
+        try {
+          const parsed = JSON.parse(asesorField.value);
+          asesorId = parsed._id?.replace(/"/g, "");
+        } catch (e) {
+          // Si no se puede parsear, dejar asesorId como null
+        }
+      }
+
       if (
         isAdmin ||
-        (data.cliente?.asesorId && data.cliente.asesorId === user.id)
+        (asesorId && asesorId === user.id)
       ) {
         setSnackbarQueue((queue) => [
           ...queue,
@@ -117,10 +128,22 @@ function TablePage() {
     });
 
     socket.on("nuevo_mensaje", (data) => {
-      // Si es admin, ve todos. Si no, solo si el asesorId coincide.
+      // Buscar el campo asesor en customFields
+      const asesorField = data.record?.customFields?.find((f: any) => f.key === "asesor");
+      let asesorId = null;
+      if (asesorField && asesorField.value) {
+        try {
+          // El value es un string tipo JSON, así que lo parseamos
+          const parsed = JSON.parse(asesorField.value);
+          asesorId = parsed._id?.replace(/"/g, ""); // Por si viene con comillas extra
+        } catch (e) {
+          // Si no se puede parsear, dejar asesorId como null
+        }
+      }
+
       if (
         isAdmin ||
-        (data.asesorId && data.asesorId === user.id)
+        (asesorId && asesorId === user.id)
       ) {
         setSnackbarQueue((queue) => [
           ...queue,
