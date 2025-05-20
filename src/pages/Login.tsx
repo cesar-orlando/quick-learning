@@ -22,7 +22,7 @@ export default function Login() {
     try {
       const { token, user } = await login(email, password);
       loginUser(token, user);
-      navigate("/prospectos");
+      navigate("/");
     } catch (error: any) {
       alert(error.response?.data?.message || "Error al iniciar sesión");
     }

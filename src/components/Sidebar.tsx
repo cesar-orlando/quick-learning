@@ -91,6 +91,32 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         {/* 🔥 Botón para nueva tabla */}
         {isAdmin && <NewButton label="Nueva Tabla" onClick={() => setOpenNewTable(true)} />}
         <List>
+             {isAdmin && (
+          <ListItem disablePadding>
+            <ListItemButton
+              onClick={() => {
+                navigate("/");
+                if (isMobile) onClose();
+              }}
+            >
+              <ListItemIcon>
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "24px",
+                  }}
+                >
+                  📊
+                </Box>
+              </ListItemIcon>
+              <ListItemText primary="Dashboard" />
+            </ListItemButton>
+          </ListItem>
+             )}
           {/* IA */}
           {isAdmin && (
             <ListItem disablePadding>

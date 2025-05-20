@@ -1,11 +1,11 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
-import Clientes from "./pages/Clientes";
 import Layout from "./components/Layout";
 import TablePage from "./pages/TablePage";
 import AIPage from "./pages/AI";
 import Users from "./pages/Users";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -26,15 +26,14 @@ function App() {
       >
         {isAdmin ? (
           <>
-            <Route path="/clientes" element={<Clientes />} />
+            <Route path="/" element={<Dashboard />} />
             <Route path="/ia" element={<AIPage />} />
             <Route path="/:slug" element={<TablePage />} />
             <Route path="/usuarios" element={<Users />} />
           </>
-        ) : 
-        <Route path="/:slug" element={<TablePage />} />
-
-        }
+        ) : (
+          <Route path="/:slug" element={<TablePage />} />
+        )}
       </Route>
 
       {/* Catch-all redirige a login */}
