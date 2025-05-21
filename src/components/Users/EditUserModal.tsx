@@ -50,7 +50,7 @@ export const EditUserModal = ({ open, onClose, user, onSuccess }: Props) => {
         return;
       }
 
-      await api.put(`/user/${user._id}`, { password: newPassword });
+      await api.put(`/user/reset-password/${user._id}`, { password: newPassword });
       alert("Contraseña restablecida correctamente.");
     } catch (err) {
       console.error("Error al restablecer contraseña:", err);
