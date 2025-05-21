@@ -7,7 +7,6 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { login } from "../api/auth";
 
@@ -15,14 +14,12 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login: loginUser } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const { token, user } = await login(email, password);
       loginUser(token, user);
-      navigate("/");
     } catch (error: any) {
       alert(error.response?.data?.message || "Error al iniciar sesión");
     }

@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
     setIsAuthenticated(true);
-    navigate("/clientes");
+    user.role === "admin" ? navigate("/") : navigate("/prospectos");
   };
 
   const logout = () => {
