@@ -327,27 +327,27 @@ export const RecordTable = ({
                             : `${value.toString() == "true" ? "Activo" : value.toString() == "false" ? "Inactivo" : value}`}
                         </Box>
                       </Tooltip>
-                      {record.tableSlug === "prospectos" && ( // Condición para mostrar el botón solo si el slug es "prospectos"
+                      {["prospectos", "clientes", "sin-contestar"].includes(record.tableSlug) && (
                         <Button
                           className="open-button"
                           onClick={() => onOpenDrawer(record)}
-                          startIcon={<KeyboardArrowRightIcon sx={{ width: 12, height: 12 }} />} // Ícono más pequeño
+                          startIcon={<KeyboardArrowRightIcon sx={{ width: 12, height: 12 }} />}
                           sx={{
-                            height: 18, // Botón más pequeño
-                            fontSize: "10px", // Texto más pequeño
-                            textTransform: "none", // Respetar las minúsculas
+                            height: 18,
+                            fontSize: "10px",
+                            textTransform: "none",
                             position: "absolute",
-                            bottom: 4, // Mover hacia abajo
-                            right: 4, // Mover hacia la derecha
-                            opacity: 0, // Opaco por defecto
+                            bottom: 4,
+                            right: 4,
+                            opacity: 0,
                             transition: "opacity 0.2s ease-in-out",
                             backgroundColor: "#F3F4F6",
                             color: "#374151",
-                            padding: "0 4px", // Reducir el padding para hacerlo más corto
-                            gap: "1px", // Reducir el espacio entre el ícono y el texto
-                            minWidth: "auto", // Eliminar el ancho mínimo predeterminado
+                            padding: "0 4px",
+                            gap: "1px",
+                            minWidth: "auto",
                             "&:hover": {
-                              opacity: 1, // Más visible al pasar el cursor
+                              opacity: 1,
                               backgroundColor: "#E5E7EB",
                             },
                           }}
