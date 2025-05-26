@@ -565,12 +565,7 @@ Una vez con esa info, te podemos apartar un lugar y enviarte los detalles comple
                       >
                         Ver ubicación en el mapa
                       </a>
-                    ) : (
-                      <Typography variant="body2">{message.body}</Typography>
-                    )}
-
-                    {/* Mensaje de pago con imagen */}
-                    {message.body?.startsWith("Aquí tienes la información para realizar tu pago a Quick Learning") ? (
+                    ) : message.body?.startsWith("Aquí tienes la información para realizar tu pago a Quick Learning") ? (
                       <>
                         <Typography variant="body2">{message.body}</Typography>
                         <Box sx={{ mt: 1, display: "flex", justifyContent: "center" }}>
@@ -587,7 +582,7 @@ Una vez con esa info, te podemos apartar un lugar y enviarte los detalles comple
                         </Box>
                       </>
                     ) : (
-                      // Otros tipos de mensajes
+                      
                       <Typography variant="body2">{message.body}</Typography>
                     )}
 
