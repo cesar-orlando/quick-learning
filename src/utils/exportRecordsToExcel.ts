@@ -12,9 +12,18 @@ export const exportRecordsToExcel = (
     const row: any = {};
 
     visibleFields.forEach(field => {
-      const match = record.customFields.find((f: any) => f.key === field.key);
-      let value = match?.value ?? "";
+      let value: any;
 
+      // 1. Busca primero como propiedad directa (para campos calculados como fechaDeLlegada)
+      if (record.hasOwnProperty(field.key)) {
+        value = record[field.key];
+      } else {
+        // 2. Si no, busca en customFields
+        const match = record.customFields?.find((f: any) => f.key === field.key);
+        value = match?.value ?? "";
+      }
+
+      // 3. Formateos especiales
       // Parsear asesor si es JSON
       if (field.key === "asesor" && typeof value === "string") {
         try {
@@ -26,16 +35,18 @@ export const exportRecordsToExcel = (
       }
 
       // Formatear fechas (hora del mensaje, etc.)
-      if (field.key === "lastMessageTime" && value) {
+      if ((field.key === "lastMessageTime" || field.type === "date") && value) {
         try {
           const date = new Date(value);
-          value = date.toLocaleString("es-MX", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
+          if (!isNaN(date.getTime())) {
+            value = date.toLocaleString("es-MX", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          }
         } catch {
           // dejar valor original
         }

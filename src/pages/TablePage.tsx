@@ -366,6 +366,18 @@ function TablePage() {
     setDateRange({});
   };
 
+  // Agrega el campo extra solo para la tabla (no afecta el backend ni los customFields)
+  const fieldsWithFecha = [
+    ...fields,
+    {
+      key: "fechaDeLlegada",
+      label: "Fecha de llegada",
+      type: "text",
+      format: "default",
+      visible: true,
+    },
+  ];
+
   if (loading) {
     return (
       <>
@@ -796,14 +808,14 @@ function TablePage() {
 
           <RecordTable
             records={filteredRecords}
-            fields={fields}
+            fields={fieldsWithFecha}
             fetchRecords={fetchRecords}
             onEdit={openEditRecordModal}
             sortField={sortField}
             setSortField={setSortField}
             sortOrder={sortOrder}
             setSortOrder={setSortOrder}
-            onOpenDrawer={handleOpenDrawer} // Pasar la función al RecordTable
+            onOpenDrawer={handleOpenDrawer}
           />
         </Box>
       )}

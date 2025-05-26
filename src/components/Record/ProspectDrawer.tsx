@@ -9,12 +9,15 @@ import {
   Avatar,
   Fade,
   OutlinedInput,
+  Button,
 } from "@mui/material";
 import { useEffect, useState, useRef } from "react";
+import PaymentIcon from "@mui/icons-material/Payment";
 import api from "../../api/axios";
 import { NewButton } from "../ui/NewButton";
 import LoaderBackdrop from "../ui/LoaderBackdrop";
 import { TemplateModal } from "./TemplateModal";
+import { PaymentModal } from "./PaymentModal";
 
 interface Field {
   key: string;
@@ -53,6 +56,7 @@ const ProspectDrawer = ({ open, onClose, record, editingFields, setEditingFields
   const [isWindowExpired, setIsWindowExpired] = useState(false);
   const [isOneWeekBlocked, setIsOneWeekBlocked] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement | null>(null); // Ref para el contenedor del chat
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin = user?.role === "admin";
@@ -196,6 +200,17 @@ Una vez con esa info, te podemos apartar un lugar y enviarte los detalles comple
     },
   ];
 
+  const paymentMethods = [
+    {
+      id: "oxxo",
+      label: "Pago OXXO, banco o transferencia",
+      description: "Depósito, transferencia o pago en OXXO.",
+      image: "https://realstate-virtual-voices.s3.us-east-2.amazonaws.com/Iztacalco.jpeg",
+      templateId: "HX1df87ec38ef585d7051f805dec8a395b",
+    },
+    // Puedes agregar más métodos aquí
+  ];
+
   if (loading) {
     return <LoaderBackdrop open={loading} />;
   }
@@ -214,34 +229,126 @@ Una vez con esa info, te podemos apartar un lugar y enviarte los detalles comple
             flexDirection: "row",
             marginTop: { xs: "56px", sm: "64px" },
             height: { xs: "calc(100% - 56px)", sm: "calc(100% - 64px)" },
-            background: "#FAFAFB", // fondo más suave
+            background: "#FAFAFB",
           },
         }}
       >
         {/* Columna izquierda: Información del cliente */}
-        <Box sx={{ width: "45%", paddingRight: 3, borderRight: "1px solid #E0E0E0" }}>
-          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: "#7B61FF" }}>
-            Prospecto
-          </Typography>
-          <Divider sx={{ mb: 2 }} />
-          {editingFields.map((field) => {
-            if (field.key === "asesor") {
-              const parsedValue = field.value ? JSON.parse(field.value) : null; // Parsear el valor si existe
-              return (
-                <Box key={field.key} sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
-                    {field.label}
-                  </Typography>
-                  {isAdmin ? (
+        <Box
+          sx={{
+            width: "45%",
+            paddingRight: 3,
+            borderRight: "1px solid #E0E0E0",
+            height: "100%", // Asegura altura completa
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0, // Necesario para scroll
+              overflowY: "auto", // Scroll si el contenido es mayor
+              pr: 1,
+            }}
+          >
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: "#7B61FF" }}>
+              Prospecto
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            {editingFields.map((field) => {
+              if (field.key === "asesor") {
+                const parsedValue = field.value ? JSON.parse(field.value) : null; // Parsear el valor si existe
+                return (
+                  <Box key={field.key} sx={{ mb: 2 }}>
+                    <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                      {field.label}
+                    </Typography>
+                    {isAdmin ? (
+                      <Select
+                        fullWidth
+                        value={parsedValue?._id || ""} // Mostrar el _id como valor seleccionado
+                        onChange={(e) => {
+                          const selectedUser = users.find((user) => user._id === e.target.value);
+                          if (selectedUser) {
+                            handleChange(field.key, JSON.stringify({ name: selectedUser.name, _id: selectedUser._id }));
+                          }
+                        }}
+                        size="small"
+                        displayEmpty
+                        input={
+                          <OutlinedInput
+                            notched={false}
+                            sx={{
+                              borderRadius: 3,
+                              backgroundColor: "#fff",
+                              boxShadow: "0px 1px 4px rgba(0,0,0,0.08)",
+                              "& fieldset": {
+                                borderColor: "transparent",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "#D0D0D0",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "#7B61FF",
+                                boxShadow: "0 0 0 2px rgba(123, 97, 255, 0.2)",
+                              },
+                              paddingRight: "32px", // espacio para la flechita
+                            }}
+                          />
+                        }
+                      >
+                        {users.map(
+                          (user) =>
+                            user.status.toString() == "true" && (
+                              <MenuItem
+                                key={user._id}
+                                value={user._id}
+                                sx={{
+                                  borderRadius: 2,
+                                  paddingY: 1,
+                                  paddingX: 2,
+                                  fontSize: "14px",
+                                  fontWeight: 500,
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  "&:hover": {
+                                    backgroundColor: "#F0ECFF",
+                                  },
+                                  "&.Mui-selected": {
+                                    backgroundColor: "#E5DFFF",
+                                    fontWeight: 600,
+                                    color: "#7B61FF",
+                                    "&:hover": {
+                                      backgroundColor: "#E0DAFF",
+                                    },
+                                  },
+                                }}
+                              >
+                                {user.name}
+                              </MenuItem>
+                            )
+                        )}
+                      </Select>
+                    ) : (
+                      <Typography variant="body1" sx={{ mt: 1 }}>
+                        {parsedValue?.name || "No asignado"}
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              }
+
+              if (field.type === "select") {
+                return (
+                  <Box key={field.key} sx={{ mb: 2 }}>
+                    <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                      {field.label}
+                    </Typography>
                     <Select
                       fullWidth
-                      value={parsedValue?._id || ""} // Mostrar el _id como valor seleccionado
-                      onChange={(e) => {
-                        const selectedUser = users.find((user) => user._id === e.target.value);
-                        if (selectedUser) {
-                          handleChange(field.key, JSON.stringify({ name: selectedUser.name, _id: selectedUser._id }));
-                        }
-                      }}
+                      value={field.value}
+                      onChange={(e) => handleChange(field.key, e.target.value)}
                       size="small"
                       displayEmpty
                       input={
@@ -266,149 +373,75 @@ Una vez con esa info, te podemos apartar un lugar y enviarte los detalles comple
                         />
                       }
                     >
-                      {users.map(
-                        (user) =>
-                          user.status.toString() == "true" && (
-                            <MenuItem
-                              key={user._id}
-                              value={user._id}
-                              sx={{
-                                borderRadius: 2,
-                                paddingY: 1,
-                                paddingX: 2,
-                                fontSize: "14px",
-                                fontWeight: 500,
-                                display: "flex",
-                                justifyContent: "space-between",
-                                "&:hover": {
-                                  backgroundColor: "#F0ECFF",
-                                },
-                                "&.Mui-selected": {
-                                  backgroundColor: "#E5DFFF",
-                                  fontWeight: 600,
-                                  color: "#7B61FF",
-                                  "&:hover": {
-                                    backgroundColor: "#E0DAFF",
-                                  },
-                                },
-                              }}
-                            >
-                              {user.name}
-                            </MenuItem>
-                          )
-                      )}
+                      {field.options?.map((option) => (
+                        <MenuItem
+                          key={option}
+                          value={option}
+                          sx={{
+                            borderRadius: 2,
+                            paddingY: 1,
+                            paddingX: 2,
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            "&:hover": {
+                              backgroundColor: "#F0ECFF",
+                            },
+                            "&.Mui-selected": {
+                              backgroundColor: "#E5DFFF",
+                              fontWeight: 600,
+                              color: "#7B61FF",
+                              "&:hover": {
+                                backgroundColor: "#E0DAFF",
+                              },
+                            },
+                          }}
+                        >
+                          {option === "true" ? "Activo" : option === "false" ? "Inactivo" : option}
+                        </MenuItem>
+                      ))}
                     </Select>
-                  ) : (
-                    <Typography variant="body1" sx={{ mt: 1 }}>
-                      {parsedValue?.name || "No asignado"}
-                    </Typography>
-                  )}
-                </Box>
-              );
-            }
+                  </Box>
+                );
+              }
 
-            if (field.type === "select") {
               return (
                 <Box key={field.key} sx={{ mb: 2 }}>
                   <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
                     {field.label}
                   </Typography>
-                  <Select
+                  <TextField
                     fullWidth
+                    size="small"
                     value={field.value}
                     onChange={(e) => handleChange(field.key, e.target.value)}
-                    size="small"
-                    displayEmpty
-                    input={
-                      <OutlinedInput
-                        notched={false}
-                        sx={{
-                          borderRadius: 3,
-                          backgroundColor: "#fff",
-                          boxShadow: "0px 1px 4px rgba(0,0,0,0.08)",
-                          "& fieldset": {
-                            borderColor: "transparent",
-                          },
-                          "&:hover fieldset": {
-                            borderColor: "#D0D0D0",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#7B61FF",
-                            boxShadow: "0 0 0 2px rgba(123, 97, 255, 0.2)",
-                          },
-                          paddingRight: "32px", // espacio para la flechita
-                        }}
-                      />
-                    }
-                  >
-                    {field.options?.map((option) => (
-                      <MenuItem
-                        key={option}
-                        value={option}
-                        sx={{
-                          borderRadius: 2,
-                          paddingY: 1,
-                          paddingX: 2,
-                          fontSize: "14px",
-                          fontWeight: 500,
-                          display: "flex",
-                          justifyContent: "space-between",
-                          "&:hover": {
-                            backgroundColor: "#F0ECFF",
-                          },
-                          "&.Mui-selected": {
-                            backgroundColor: "#E5DFFF",
-                            fontWeight: 600,
-                            color: "#7B61FF",
-                            "&:hover": {
-                              backgroundColor: "#E0DAFF",
-                            },
-                          },
-                        }}
-                      >
-                        {option === "true" ? "Activo" : option === "false" ? "Inactivo" : option}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 3,
+                        backgroundColor: "#fff",
+                        boxShadow: "0px 1px 4px rgba(0,0,0,0.08)",
+                        "& fieldset": {
+                          borderColor: "transparent", // sin borde inicial
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "#D0D0D0", // borde tenue en hover
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#7B61FF", // borde morado al focus
+                          boxShadow: "0 0 0 2px rgba(123, 97, 255, 0.2)", // glow morado al focus
+                        },
+                      },
+                      "& input": {
+                        padding: "10px 14px",
+                      },
+                    }}
+                  />
                 </Box>
               );
-            }
-
-            return (
-              <Box key={field.key} sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
-                  {field.label}
-                </Typography>
-                <TextField
-                  fullWidth
-                  size="small"
-                  value={field.value}
-                  onChange={(e) => handleChange(field.key, e.target.value)}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 3,
-                      backgroundColor: "#fff",
-                      boxShadow: "0px 1px 4px rgba(0,0,0,0.08)",
-                      "& fieldset": {
-                        borderColor: "transparent", // sin borde inicial
-                      },
-                      "&:hover fieldset": {
-                        borderColor: "#D0D0D0", // borde tenue en hover
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: "#7B61FF", // borde morado al focus
-                        boxShadow: "0 0 0 2px rgba(123, 97, 255, 0.2)", // glow morado al focus
-                      },
-                    },
-                    "& input": {
-                      padding: "10px 14px",
-                    },
-                  }}
-                />
-              </Box>
-            );
-          })}
-          <NewButton fullWidth label="Guardar Cambios" onClick={handleSubmit} />
+            })}
+            <NewButton fullWidth label="Guardar Cambios" onClick={handleSubmit} />
+          </Box>
         </Box>
 
         {/* Columna derecha: Chat */}
@@ -422,11 +455,34 @@ Una vez con esa info, te podemos apartar un lugar y enviarte los detalles comple
           }}
         >
           {/* Header del chat */}
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <Avatar alt="Cliente" sx={{ width: 48, height: 48, mr: 1 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              {nameField?.value || "Cliente"}
-            </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 2, justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Avatar alt="Cliente" sx={{ width: 48, height: 48, mr: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                {nameField?.value || "Cliente"}
+              </Typography>
+            </Box>
+
+            <Button
+              variant="contained"
+              startIcon={<PaymentIcon />}
+              onClick={() => setPaymentModalOpen(true)}
+              disabled={isOneWeekBlocked || isWindowExpired}
+              sx={{
+                backgroundColor: "#7B61FF",
+                color: "#fff",
+                textTransform: "none",
+                fontWeight: 500,
+                borderRadius: "12px",
+                px: 2,
+                py: 1,
+                "&:hover": {
+                  backgroundColor: "#6a54e0",
+                },
+              }}
+            >
+              Enviar pago
+            </Button>
           </Box>
           <Divider />
 
@@ -460,6 +516,7 @@ Una vez con esa info, te podemos apartar un lugar y enviarte los detalles comple
                       wordBreak: "break-word",
                     }}
                   >
+                    {/* Mensaje de imagen, video, audio, ubicación... */}
                     {message.body?.startsWith("🖼️ El usuario compartió una imagen:") &&
                     message.body.includes("https://") ? (
                       <img
@@ -509,6 +566,28 @@ Una vez con esa info, te podemos apartar un lugar y enviarte los detalles comple
                         Ver ubicación en el mapa
                       </a>
                     ) : (
+                      <Typography variant="body2">{message.body}</Typography>
+                    )}
+
+                    {/* Mensaje de pago con imagen */}
+                    {message.body?.startsWith("Aquí tienes la información para realizar tu pago a Quick Learning") ? (
+                      <>
+                        <Typography variant="body2">{message.body}</Typography>
+                        <Box sx={{ mt: 1, display: "flex", justifyContent: "center" }}>
+                          <img
+                            src="https://realstate-virtual-voices.s3.us-east-2.amazonaws.com/Iztacalco.jpeg"
+                            alt="Método de pago"
+                            style={{
+                              maxWidth: 220,
+                              borderRadius: 8,
+                              border: "1px solid rgba(255,255,255,0.2)",
+                              background: "#fff",
+                            }}
+                          />
+                        </Box>
+                      </>
+                    ) : (
+                      // Otros tipos de mensajes
                       <Typography variant="body2">{message.body}</Typography>
                     )}
 
@@ -611,6 +690,27 @@ Una vez con esa info, te podemos apartar un lugar y enviarte los detalles comple
             setTemplateModalOpen(false);
           } catch (error) {
             console.error("Error al enviar plantilla:", error);
+          }
+        }}
+      />
+      <PaymentModal
+        open={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        paymentMethods={paymentMethods}
+        name={nameField?.value || "amigo/a"}
+        onSend={async (method) => {
+          const phoneField = record?.customFields?.find((f: any) => f.key === "phone");
+          if (!phoneField?.value) return;
+          try {
+            await api.post("/whatsapp/send-template", {
+              phone: phoneField.value,
+              templateId: method.templateId,
+              variables: [nameField?.value || "amigo/a"],
+            });
+            setPaymentModalOpen(false);
+            fetchChat(phoneField.value);
+          } catch (error) {
+            console.error("Error al enviar método de pago:", error);
           }
         }}
       />

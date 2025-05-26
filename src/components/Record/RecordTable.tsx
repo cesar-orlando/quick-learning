@@ -84,7 +84,38 @@ export const RecordTable = ({
       <LoaderBackdrop open={loading} text="Guardando cambios..." />
       <Box display="flex" justifyContent="flex-end" alignItems="center" mb={1} px={1}>
         <Button
-          onClick={() => exportRecordsToExcel(records, fields, "tabla-prospectos.xlsx")}
+          onClick={() => {
+            const recordsWithFecha = records.map((record) => ({
+              ...record,
+              fechaDeLlegada: record.createdAt
+                ? new Date(
+                    typeof record.createdAt === "string"
+                      ? record.createdAt
+                      : record.createdAt.$date
+                  ).toLocaleString("es-MX", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "-",
+            }));
+
+            // Agrega el campo a fields solo para la exportación
+            const fieldsWithFecha = [
+              ...fields,
+              {
+                key: "fechaDeLlegada",
+                label: "Fecha de llegada",
+                type: "date",
+                format: "default",
+                visible: true,
+              },
+            ];
+
+            exportRecordsToExcel(recordsWithFecha, fieldsWithFecha, "tabla-prospectos.xlsx");
+          }}
           sx={{
             minWidth: "auto",
             padding: "6px",
@@ -194,7 +225,6 @@ export const RecordTable = ({
                     </TableCell>
                   )
               )}
-              <TableCell sx={{ fontWeight: "bold" }}>Fecha de llegada</TableCell>
               <TableCell sx={{ fontWeight: "bold" }} align="right">
                 Acciones
               </TableCell>
@@ -214,8 +244,33 @@ export const RecordTable = ({
                 }}
               >
                 {fields.map((field) => {
-                  const fieldData = record.customFields?.find((f: any) => f.key === field.key);
-                  const value = fieldData?.value ?? "-";
+                  let value;
+                  // Si el campo existe directo en el objeto, úsalo
+                  if (record.hasOwnProperty(field.key)) {
+                    value = record[field.key];
+                  } else {
+                    // Si no, busca en customFields
+                    const fieldData = record.customFields?.find((f: any) => f.key === field.key);
+                    value = fieldData ? fieldData.value : "";
+                  }
+
+                  if (field.key === "fechaDeLlegada") {
+                    return (
+                      <TableCell align="left">
+                        {record.createdAt
+                          ? new Date(
+                              typeof record.createdAt === "string" ? record.createdAt : record.createdAt.$date // Por si viene como objeto
+                            ).toLocaleString("es-MX", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "-"}
+                      </TableCell>
+                    );
+                  }
 
                   if (field.key === "asesor" && value) {
                     // Parsear el valor si está en formato JSON
@@ -361,19 +416,6 @@ export const RecordTable = ({
                     </TableCell>
                   );
                 })}
-                <TableCell align="left">
-                  {record.createdAt
-                    ? new Date(
-                        typeof record.createdAt === "string" ? record.createdAt : record.createdAt.$date // Por si viene como objeto
-                      ).toLocaleString("es-MX", {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "-"}
-                </TableCell>
 
                 <TableCell align="right">
                   <IconButton
