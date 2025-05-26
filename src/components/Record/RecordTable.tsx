@@ -194,6 +194,7 @@ export const RecordTable = ({
                     </TableCell>
                   )
               )}
+              <TableCell sx={{ fontWeight: "bold" }}>Fecha de llegada</TableCell>
               <TableCell sx={{ fontWeight: "bold" }} align="right">
                 Acciones
               </TableCell>
@@ -324,7 +325,9 @@ export const RecordTable = ({
                         >
                           {isCurrency
                             ? formatCurrency(value)
-                            : `${value.toString() == "true" ? "Activo" : value.toString() == "false" ? "Inactivo" : value}`}
+                            : `${
+                                value.toString() == "true" ? "Activo" : value.toString() == "false" ? "Inactivo" : value
+                              }`}
                         </Box>
                       </Tooltip>
                       {["prospectos", "clientes", "sin-contestar"].includes(record.tableSlug) && (
@@ -358,6 +361,19 @@ export const RecordTable = ({
                     </TableCell>
                   );
                 })}
+                <TableCell align="left">
+                  {record.createdAt
+                    ? new Date(
+                        typeof record.createdAt === "string" ? record.createdAt : record.createdAt.$date // Por si viene como objeto
+                      ).toLocaleString("es-MX", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "-"}
+                </TableCell>
 
                 <TableCell align="right">
                   <IconButton
