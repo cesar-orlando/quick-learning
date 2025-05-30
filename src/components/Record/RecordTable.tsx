@@ -12,10 +12,13 @@ import {
   DialogContent,
   Tooltip,
   Button,
+  Badge,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import DownloadIcon from "@mui/icons-material/Download";
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import { useMemo } from "react";
 
 import { useState } from "react";
 import api from "../../api/axios";
@@ -42,6 +45,7 @@ interface RecordTableProps {
   sortOrder: "asc" | "desc";
   setSortOrder: (v: "asc" | "desc") => void;
   onOpenDrawer: (record: any) => void;
+  newMessageRecords?: { recordId: string; timestamp: number }[];
 }
 
 export const RecordTable = ({
@@ -54,6 +58,7 @@ export const RecordTable = ({
   sortOrder,
   setSortOrder,
   onOpenDrawer,
+  newMessageRecords = [],
 }: RecordTableProps) => {
   const [modalFiles, setModalFiles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -163,6 +168,7 @@ export const RecordTable = ({
         >
           <TableHead>
             <TableRow>
+              <TableCell sx={{ width: 40, backgroundColor: "#F9FAFB" }}></TableCell>
               {fields.map(
                 (field) =>
                   field.visible !== false && (
@@ -232,68 +238,124 @@ export const RecordTable = ({
           </TableHead>
 
           <TableBody>
-            {records.map((record) => (
-              <TableRow
-                key={record._id}
-                sx={{
-                  borderBottom: "1px solid #E5E7EB",
-                  transition: "background 0.2s",
-                  "&:hover": {
-                    backgroundColor: "#FAFAFA",
-                  },
-                }}
-              >
-                {fields.map((field) => {
-                  let value;
-                  // Si el campo existe directo en el objeto, úsalo
-                  if (record.hasOwnProperty(field.key)) {
-                    value = record[field.key];
-                  } else {
-                    // Si no, busca en customFields
-                    const fieldData = record.customFields?.find((f: any) => f.key === field.key);
-                    value = fieldData ? fieldData.value : "";
-                  }
-
-                  if (field.key === "fechaDeLlegada") {
-                    return (
-                      <TableCell align="left">
-                        {record.createdAt
-                          ? new Date(
-                              typeof record.createdAt === "string" ? record.createdAt : record.createdAt.$date // Por si viene como objeto
-                            ).toLocaleString("es-MX", {
-                              year: "numeric",
-                              month: "2-digit",
-                              day: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "-"}
-                      </TableCell>
-                    );
-                  }
-
-                  if (field.key === "asesor" && value) {
-                    // Parsear el valor si está en formato JSON
-                    let parsedValue = value;
-                    if (typeof value === "string") {
-                      try {
-                        parsedValue = JSON.parse(value);
-                      } catch (err) {
-                        console.warn("❌ Error al hacer JSON.parse en el campo asesor:", value);
-                        parsedValue = { name: value }; // fallback
-                      }
+            {records.map((record) => {
+              // Buscar si este registro tiene mensaje nuevo
+              const msgObj = newMessageRecords.find((r) => r.recordId === record._id);
+              const showBadge = !!msgObj;
+              // La animación siempre está activa si hay mensaje nuevo
+              const animate = showBadge;
+              return (
+                <TableRow
+                  key={record._id}
+                  sx={{
+                    borderBottom: "1px solid #E5E7EB",
+                    transition: "background 0.2s",
+                    "&:hover": {
+                      backgroundColor: "#FAFAFA",
+                    },
+                  }}
+                >
+                  <TableCell align="center" sx={{ width: 40 }}>
+                    {showBadge && (
+                      <Badge
+                        color="error"
+                        variant="dot"
+                        overlap="circular"
+                        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                        sx={{
+                          ".MuiBadge-dot": {
+                            width: 10,
+                            height: 10,
+                            minWidth: 0,
+                            minHeight: 0,
+                            border: "2px solid #fff",
+                          },
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            animation: animate ? "shake-bell 0.7s infinite" : undefined,
+                          }}
+                        >
+                          <NotificationsNoneIcon sx={{ color: "#FF5BAE" }} />
+                        </span>
+                      </Badge>
+                    )}
+                  </TableCell>
+                  {fields.map((field) => {
+                    let value;
+                    // Si el campo existe directo en el objeto, úsalo
+                    if (record.hasOwnProperty(field.key)) {
+                      value = record[field.key];
+                    } else {
+                      // Si no, busca en customFields
+                      const fieldData = record.customFields?.find((f: any) => f.key === field.key);
+                      value = fieldData ? fieldData.value : "";
                     }
 
-                    const name = parsedValue?.name || "-";
-                    const truncatedName = name.split(" ").slice(0, 2).join(" "); // Obtener las dos primeras palabras
+                    if (field.key === "fechaDeLlegada") {
+                      return (
+                        <TableCell align="left">
+                          {record.createdAt
+                            ? new Date(
+                                typeof record.createdAt === "string" ? record.createdAt : record.createdAt.$date // Por si viene como objeto
+                              ).toLocaleString("es-MX", {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "-"}
+                        </TableCell>
+                      );
+                    }
 
-                    return (
-                      <TableCell
-                        key={field.key}
-                        align="left"
-                        sx={{ maxWidth: 250, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        <Tooltip title={name} placement="top-start" arrow>
+                    if (field.key === "asesor" && value) {
+                      // Parsear el valor si está en formato JSON
+                      let parsedValue = value;
+                      if (typeof value === "string") {
+                        try {
+                          parsedValue = JSON.parse(value);
+                        } catch (err) {
+                          console.warn("❌ Error al hacer JSON.parse en el campo asesor:", value);
+                          parsedValue = { name: value }; // fallback
+                        }
+                      }
+
+                      const name = parsedValue?.name || "-";
+                      const truncatedName = name.split(" ").slice(0, 2).join(" "); // Obtener las dos primeras palabras
+
+                      return (
+                        <TableCell
+                          key={field.key}
+                          align="left"
+                          sx={{ maxWidth: 250, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                        >
+                          <Tooltip title={name} placement="top-start" arrow>
+                            <Box
+                              sx={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {truncatedName}
+                            </Box>
+                          </Tooltip>
+                        </TableCell>
+                      );
+                    }
+
+                    if (field.key === "lastMessageTime" && value) {
+                      return (
+                        <TableCell
+                          key={field.key}
+                          align="left"
+                          sx={{ maxWidth: 250, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                        >
                           <Box
                             sx={{
                               whiteSpace: "nowrap",
@@ -301,151 +363,131 @@ export const RecordTable = ({
                               textOverflow: "ellipsis",
                             }}
                           >
-                            {truncatedName}
+                            {new Date(value).toLocaleDateString("es-MX", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </Box>
+                        </TableCell>
+                      );
+                    }
+
+                    if (field.type === "file" && value && Array.isArray(value)) {
+                      return (
+                        <TableCell
+                          key={field.key}
+                          sx={{
+                            maxWidth: 200,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            textAlign: "center",
+                          }}
+                        >
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            gap={1}
+                            justifyContent="center"
+                            onClick={() => handleOpenFilesModal(value)}
+                            sx={{ cursor: "pointer" }}
+                          >
+                            <Typography variant="body2">
+                              📂 {value.length} archivo{value.length > 1 ? "s" : ""}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      );
+                    }
+
+                    const isCurrency = field.type == "number" && field.format == "currency";
+
+                    return (
+                      <TableCell
+                        key={field.key}
+                        align={field.type === "number" ? "right" : "left"}
+                        sx={{ maxWidth: 250, position: "relative", "&:hover .open-button": { opacity: 1 } }}
+                      >
+                        <Tooltip title={value} placement="top-start" arrow>
+                          <Box
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {isCurrency
+                              ? formatCurrency(value)
+                              : `${
+                                  value.toString() == "true" ? "Activo" : value.toString() == "false" ? "Inactivo" : value
+                                }`}
                           </Box>
                         </Tooltip>
+                        {["prospectos", "clientes", "sin-contestar"].includes(record.tableSlug) && (
+                          <Button
+                            className="open-button"
+                            onClick={() => onOpenDrawer(record)}
+                            startIcon={<KeyboardArrowRightIcon sx={{ width: 12, height: 12 }} />}
+                            sx={{
+                              height: 18,
+                              fontSize: "10px",
+                              textTransform: "none",
+                              position: "absolute",
+                              bottom: 4,
+                              right: 4,
+                              opacity: 0,
+                              transition: "opacity 0.2s ease-in-out",
+                              backgroundColor: "#F3F4F6",
+                              color: "#374151",
+                              padding: "0 4px",
+                              gap: "1px",
+                              minWidth: "auto",
+                              "&:hover": {
+                                opacity: 1,
+                                backgroundColor: "#E5E7EB",
+                              },
+                            }}
+                          >
+                            Abrir
+                          </Button>
+                        )}
                       </TableCell>
                     );
-                  }
+                  })}
 
-                  if (field.key === "lastMessageTime" && value) {
-                    return (
-                      <TableCell
-                        key={field.key}
-                        align="left"
-                        sx={{ maxWidth: 250, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-                      >
-                        <Box
-                          sx={{
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {new Date(value).toLocaleDateString("es-MX", {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </Box>
-                      </TableCell>
-                    );
-                  }
-
-                  if (field.type === "file" && value && Array.isArray(value)) {
-                    return (
-                      <TableCell
-                        key={field.key}
-                        sx={{
-                          maxWidth: 200,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          textAlign: "center",
-                        }}
-                      >
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          gap={1}
-                          justifyContent="center"
-                          onClick={() => handleOpenFilesModal(value)}
-                          sx={{ cursor: "pointer" }}
-                        >
-                          <Typography variant="body2">
-                            📂 {value.length} archivo{value.length > 1 ? "s" : ""}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                    );
-                  }
-
-                  const isCurrency = field.type == "number" && field.format == "currency";
-
-                  return (
-                    <TableCell
-                      key={field.key}
-                      align={field.type === "number" ? "right" : "left"}
-                      sx={{ maxWidth: 250, position: "relative", "&:hover .open-button": { opacity: 1 } }}
+                  <TableCell align="right">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        setMenuAnchor(e.currentTarget);
+                        setSelectedRecord(record); // ✅ Este es el truco: guarda el record correcto
+                      }}
                     >
-                      <Tooltip title={value} placement="top-start" arrow>
-                        <Box
-                          sx={{
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {isCurrency
-                            ? formatCurrency(value)
-                            : `${
-                                value.toString() == "true" ? "Activo" : value.toString() == "false" ? "Inactivo" : value
-                              }`}
-                        </Box>
-                      </Tooltip>
-                      {["prospectos", "clientes", "sin-contestar"].includes(record.tableSlug) && (
-                        <Button
-                          className="open-button"
-                          onClick={() => onOpenDrawer(record)}
-                          startIcon={<KeyboardArrowRightIcon sx={{ width: 12, height: 12 }} />}
-                          sx={{
-                            height: 18,
-                            fontSize: "10px",
-                            textTransform: "none",
-                            position: "absolute",
-                            bottom: 4,
-                            right: 4,
-                            opacity: 0,
-                            transition: "opacity 0.2s ease-in-out",
-                            backgroundColor: "#F3F4F6",
-                            color: "#374151",
-                            padding: "0 4px",
-                            gap: "1px",
-                            minWidth: "auto",
-                            "&:hover": {
-                              opacity: 1,
-                              backgroundColor: "#E5E7EB",
-                            },
-                          }}
-                        >
-                          Abrir
-                        </Button>
-                      )}
-                    </TableCell>
-                  );
-                })}
-
-                <TableCell align="right">
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      setMenuAnchor(e.currentTarget);
-                      setSelectedRecord(record); // ✅ Este es el truco: guarda el record correcto
-                    }}
-                  >
-                    <MoreVertIcon sx={{ color: "#6B7280" }} />
-                  </IconButton>
-                  <ActionMenu
-                    anchorEl={menuAnchor}
-                    onClose={() => setMenuAnchor(null)}
-                    onEdit={() => {
-                      if (selectedRecord) {
-                        onEdit(selectedRecord); // ✅ aquí sí es correcto
-                        setMenuAnchor(null);
-                      }
-                    }}
-                    onDelete={() => {
-                      if (selectedRecord) {
-                        handleDeleteRecord(selectedRecord._id);
-                        setMenuAnchor(null);
-                      }
-                    }}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
+                      <MoreVertIcon sx={{ color: "#6B7280" }} />
+                    </IconButton>
+                    <ActionMenu
+                      anchorEl={menuAnchor}
+                      onClose={() => setMenuAnchor(null)}
+                      onEdit={() => {
+                        if (selectedRecord) {
+                          onEdit(selectedRecord); // ✅ aquí sí es correcto
+                          setMenuAnchor(null);
+                        }
+                      }}
+                      onDelete={() => {
+                        if (selectedRecord) {
+                          handleDeleteRecord(selectedRecord._id);
+                          setMenuAnchor(null);
+                        }
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
 
           <Dialog open={modalFiles.length > 0} onClose={() => setModalFiles([])} fullWidth maxWidth="md">
@@ -546,3 +588,20 @@ export const RecordTable = ({
 };
 
 export default RecordTable;
+
+// Animación CSS para la campana vibrando
+const style = document.createElement('style');
+style.innerHTML = `
+@keyframes shake-bell {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(-15deg); }
+  30% { transform: rotate(10deg); }
+  45% { transform: rotate(-10deg); }
+  60% { transform: rotate(6deg); }
+  75% { transform: rotate(-4deg); }
+  100% { transform: rotate(0deg); }
+}`;
+if (!document.head.querySelector('#bell-shake-style')) {
+  style.id = 'bell-shake-style';
+  document.head.appendChild(style);
+}

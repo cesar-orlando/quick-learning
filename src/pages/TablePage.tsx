@@ -64,6 +64,7 @@ function TablePage() {
   const [dateRange, setDateRange] = useState<{ [key: string]: { start: string; end: string } }>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [newMessageRecords, setNewMessageRecords] = useState<{ recordId: string; timestamp: number }[]>([]);
 
   const initialDateField = useMemo(() => {
     if (dateRange.lastMessageTime?.start || dateRange.lastMessageTime?.end) return "lastMessageTime";
@@ -124,6 +125,7 @@ function TablePage() {
             phone: data.cliente.phone,
           },
         ]);
+        fetchRecords();
       }
     });
 
@@ -154,6 +156,21 @@ function TablePage() {
             phone: data.phone,
           },
         ]);
+        // Agregar o actualizar el recordId y timestamp
+        if (data.record?._id) {
+          setNewMessageRecords((prev) => {
+            const now = Date.now();
+            // Si ya existe, actualiza el timestamp
+            if (prev.some((r) => r.recordId === data.record._id)) {
+              return prev.map((r) =>
+                r.recordId === data.record._id ? { ...r, timestamp: now } : r
+              );
+            }
+            // Si no existe, lo agrega
+            return [...prev, { recordId: data.record._id, timestamp: now }];
+          });
+        }
+        fetchRecords();
       }
     });
 
@@ -271,6 +288,8 @@ function TablePage() {
       }))
     );
     setDrawerOpen(true);
+    // Quitar la campana de mensaje nuevo al abrir el chat
+    setNewMessageRecords((prev) => prev.filter((r) => r.recordId !== record._id));
   };
 
   const handleCloseDrawer = () => {
@@ -816,6 +835,7 @@ function TablePage() {
             sortOrder={sortOrder}
             setSortOrder={setSortOrder}
             onOpenDrawer={handleOpenDrawer}
+            newMessageRecords={newMessageRecords}
           />
         </Box>
       )}
