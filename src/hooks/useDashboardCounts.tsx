@@ -10,7 +10,12 @@ interface DashboardCounts {
   error: boolean;
 }
 
-const useDashboardCounts = (): DashboardCounts => {
+interface DashboardCountsParams {
+  startDate: string;
+  endDate: string;
+}
+
+const useDashboardCounts = ({ startDate, endDate }: DashboardCountsParams): DashboardCounts => {
   const [counts, setCounts] = useState({
     alumnos: 0,
     clientes: 0,
@@ -22,6 +27,7 @@ const useDashboardCounts = (): DashboardCounts => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setCounts((prev) => ({ ...prev, loading: true, error: false }));
       try {
         const [alumnosRes, clientesRes, prospectosRes, sinIntRes] = await Promise.all([
           api.get("/records/alumnos"),
@@ -30,16 +36,17 @@ const useDashboardCounts = (): DashboardCounts => {
           api.get("/records/sin-contestar"),
         ]);
 
-        const isCurrentMonth = (dateString: string): boolean => {
+        const isInRange = (dateString: string): boolean => {
           const date = new Date(dateString);
-          const now = new Date();
-          return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          return date >= start && date <= end;
         };
 
-        const alumnosData = alumnosRes.data.records.filter((record: any) => isCurrentMonth(record.createdAt));
-        const clientesData = clientesRes.data.records.filter((record: any) => isCurrentMonth(record.createdAt));
-        const prospectosData = prospectosRes.data.records.filter((record: any) => isCurrentMonth(record.createdAt));
-        const sinIntData = sinIntRes.data.records.filter((record: any) => isCurrentMonth(record.createdAt));
+        const alumnosData = alumnosRes.data.records.filter((record: any) => isInRange(record.createdAt));
+        const clientesData = clientesRes.data.records.filter((record: any) => isInRange(record.createdAt));
+        const prospectosData = prospectosRes.data.records.filter((record: any) => isInRange(record.createdAt));
+        const sinIntData = sinIntRes.data.records.filter((record: any) => isInRange(record.createdAt));
 
         setCounts({
           alumnos: alumnosData.length || 0,
@@ -56,7 +63,7 @@ const useDashboardCounts = (): DashboardCounts => {
     };
 
     fetchData();
-  }, []);
+  }, [startDate, endDate]);
 
   return counts;
 };
