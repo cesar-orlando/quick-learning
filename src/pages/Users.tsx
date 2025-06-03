@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from "react"; // Importar useRef
-import { Box, Typography, Button, TextField} from "@mui/material";
+import { Box, Typography, Button, TextField } from "@mui/material";
 import Lottie from "lottie-react";
 import SearchIcon from "@mui/icons-material/Search";
 import emptyAnimation from "../assets/empty.json";
@@ -8,24 +8,19 @@ import api from "../api/axios";
 import LoaderBackdrop from "../components/ui/LoaderBackdrop";
 import NewUserModal from "../components/Users/NewUserModal";
 import EditUserModal from "../components/Users/EditUserModal";
+import { useUserStats } from "../hooks/useActiveUsers"; // O tu hook de stats
 
 function Users() {
   const [users, setUsers] = useState<any[]>([]);
-  const fields = [
-    { key: "name", label: "Nombre", type: "text", visible: true },
-    { key: "email", label: "Correo Electrónico", type: "text", visible: true },
-    { key: "role", label: "Rol", type: "text", visible: true },
-    { key: "status", label: "Estado", type: "select", options: ["true", "false"], visible: true },
-  ];
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState<string>("");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openNewUser, setOpenNewUser] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [openEditUser, setOpenEditUser] = useState(false);
   const [showSearch, setShowSearch] = useState(false); // Estado para mostrar/ocultar el buscador
   const searchRef = useRef<HTMLInputElement>(null); // Referencia para el input del buscador
+
+  const { stats, loading: statsLoading } = useUserStats(users);
 
   useEffect(() => {
     fetchUsers();
@@ -58,16 +53,21 @@ function Users() {
       return matchSearch ;
     });
 
-    if (sortField) {
-      result = result.sort((a, b) => {
-        const valA = a[sortField];
-        const valB = b[sortField];
-        return sortOrder === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
-      });
-    }
-
     return result;
-  }, [users, searchTerm, sortField, sortOrder]);
+  }, [users, searchTerm]);
+
+  const handleDeleteUser = async (id: string) => {
+    if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
+    try {
+      setLoading(true);
+      await api.delete(`/user/${id}`);
+      await fetchUsers();
+    } catch (error) {
+      console.error("Error al eliminar usuario:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return <LoaderBackdrop open={loading} text="Cargando usuarios..." />;
@@ -204,19 +204,18 @@ function Users() {
           </Typography>
         </Box>
       ) : (
-        <UsersTable
-          users={filteredUsers}
-          fields={fields}
-          fetchUsers={fetchUsers}
-          onEdit={(user) => {
-            setEditingUser(user);
-            setOpenEditUser(true);
-          }}
-          sortField={sortField}
-          setSortField={setSortField}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-        />
+        <>
+          {statsLoading ? (
+            <LoaderBackdrop open text="Cargando clientes por usuario..." />
+          ) : (
+              <UsersTable
+                users={filteredUsers}
+                stats={stats}
+                onEdit={(user) => { setEditingUser(user); setOpenEditUser(true); }}
+                onDelete={handleDeleteUser}
+              />
+          )}
+        </>
       )}
 
       {/* Modales */}
