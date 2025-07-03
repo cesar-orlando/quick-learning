@@ -55,18 +55,21 @@ function TablePage() {
     try {
       let res;
       if (isAdmin) {
-        // Si es administrador, usar el endpoint general
         res = await api.get(`/records/${slug}`);
       } else {
-        // Si no es administrador, usar el endpoint específico del asesor
-        const asesorId = user.id; // Obtener el ID del usuario desde localStorage
+        const asesorId = user.id;
         res = await api.get(`/whatsapp/prospect/${asesorId}`);
       }
 
-      const recordsFetched = res.data;
+      console.log("res", res);
+
+      const recordsFetched = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data.records)
+          ? res.data.records
+          : [];
       setRecords(recordsFetched);
 
-      // 🔥 Automáticamente armar fields desde el primer registro
       const firstRecord = recordsFetched.find((r: any) => r.customFields?.length > 0);
       if (firstRecord) {
         const dynamicFields = firstRecord.customFields.map((field: any) => ({
@@ -79,7 +82,7 @@ function TablePage() {
         }));
         setFields(dynamicFields);
       } else {
-        setFields([]); // Si no hay registros aún
+        setFields([]);
       }
     } catch (error) {
       console.error("Error al traer registros:", error);
