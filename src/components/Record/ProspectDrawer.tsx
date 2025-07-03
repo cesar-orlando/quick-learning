@@ -300,7 +300,7 @@ Una vez con esa info, te podemos apartar un lugar y enviarte los detalles comple
                       >
                         {users.map(
                           (user) =>
-                            user.status.toString() == "true" && (
+                            (user.status ?? '').toString() == "true" && (
                               <MenuItem
                                 key={user._id}
                                 value={user._id}
