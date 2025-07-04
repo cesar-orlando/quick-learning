@@ -425,7 +425,7 @@ export const RecordTable = ({
                                 }`}
                           </Box>
                         </Tooltip>
-                        {["prospectos", "clientes", "sin-contestar"].includes(record.tableSlug) && (
+                        {["prospectos", "clientes", "alumnos", "sin-contestar"].includes(record.tableSlug) && (
                           <Button
                             className="open-button"
                             onClick={() => onOpenDrawer(record)}
